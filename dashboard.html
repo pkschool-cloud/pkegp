@@ -76,7 +76,13 @@
                     <p class="text-xs text-indigo-300 font-medium mt-0.5" id="displayRole">Role</p>
                 </div>
             </div>
-            <button onclick="logout()" class="w-full flex items-center justify-center px-4 py-3 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-400 rounded-xl transition-all duration-300 font-medium">
+            
+            <button onclick="document.getElementById('changePwdModal').classList.remove('hidden')" class="w-full flex items-center justify-center px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all duration-300 font-medium mb-2 text-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+                เปลี่ยนรหัสผ่าน
+            </button>
+
+            <button onclick="logout()" class="w-full flex items-center justify-center px-4 py-2.5 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-400 rounded-lg transition-all duration-300 font-medium text-sm">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                 ออกจากระบบ
             </button>
@@ -275,6 +281,32 @@
         </div>
     </div>
 
+    <div id="changePwdModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card rounded-3xl w-full max-w-sm overflow-hidden modal-enter border border-white/40">
+            <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-blue-50/50">
+                <h3 class="text-lg font-bold text-blue-900">เปลี่ยนรหัสผ่าน</h3>
+                <button onclick="document.getElementById('changePwdModal').classList.add('hidden')" class="text-slate-400 hover:text-red-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">รหัสผ่านเดิม</label>
+                    <input type="password" id="oldPwd" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500" placeholder="รหัสผ่านปัจจุบันของคุณ">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">รหัสผ่านใหม่</label>
+                    <input type="password" id="newPwd" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500" placeholder="ตั้งรหัสผ่านใหม่">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">ยืนยันรหัสผ่านใหม่</label>
+                    <input type="password" id="confirmNewPwd" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500" placeholder="กรอกรหัสผ่านใหม่อีกครั้ง">
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                <button onclick="changePassword()" id="btnChangePwd" class="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-lg transition-all w-full">บันทึกรหัสผ่านใหม่</button>
+            </div>
+        </div>
+    </div>
+
     <div id="addUserModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="glass-card rounded-3xl w-full max-w-sm overflow-hidden modal-enter border border-white/40">
             <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-purple-50/50">
@@ -296,7 +328,7 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbzh9t4s6wdvH55yZwgD9YR56zYiN8b5Ww4M3z1HKiO2aN792vfLhlgwqs33mXHP7sVNPg/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycby8X-ixaIZgOc18NOcrWisRd2l5wpm-tLAJcwu4o6Q5HPtLrHUoGc0AI-L6ftrtjiMAig/exec";
         
         let currentTab = 'purchasing';
         const currentYear = "2569";
@@ -319,7 +351,7 @@
                 const result = await res.json();
                 if(result.status === 'success') { 
                     db = result.data; 
-                    renderUserDropdowns(); // โหลดรายชื่อผู้ใช้ใส่ Dropdown
+                    renderUserDropdowns(); 
                     renderTable(); 
                     renderUsers(); 
                 } 
@@ -334,7 +366,6 @@
             document.getElementById('shiftCreator').innerHTML = options;
             document.getElementById('editCreator').innerHTML = options;
             
-            // ตั้งค่าเริ่มต้นให้เลือกเป็นตัวเอง
             document.getElementById('bdCreator').value = username;
             document.getElementById('shiftCreator').value = username;
         }
@@ -378,7 +409,6 @@
                     ? `<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 shadow-sm"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>รับแล้ว</span>`
                     : `<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 shadow-sm"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5 animate-pulse"></span>รอรับเข้า</span>`;
 
-                // ลอจิกสำคัญ: User ธรรมดา จะแก้ได้ก็ต่อเมื่อ "ชื่อตัวเองเป็น Owner" และ "ยังไม่โดนรับเข้า"
                 const isOwner = item.creator === username;
                 const canEdit = role === 'Admin' || (!item.isReceived && isOwner);
                 
@@ -414,7 +444,6 @@
 
             btn.disabled = true; btn.innerHTML = 'กำลังสร้างเอกสาร...';
 
-            // ถ้าปล่อยชื่อว่างไว้ ให้เป็น "รอรับเข้า" เพื่อให้ User เข้าไปแก้ได้
             const isRecv = name !== ''; 
             const newRecord = {
                 id: Date.now(),
@@ -500,7 +529,6 @@
             const item = db[currentTab].find(d => d.id === id);
             if(!item) return;
 
-            // ตัวบล็อกฝั่งหน้าบ้าน: User ทั่วไปเข้าแก้ไม่ได้ถ้าเป็นของคนอื่น หรือถ้ามันรับเข้าแล้ว
             if (role !== 'Admin' && (item.isReceived || item.creator !== username)) {
                 alert('ไม่สามารถแก้ไขได้ เนื่องจากเอกสารนี้ถูกล็อค หรือคุณไม่ใช่ผู้รับผิดชอบ');
                 return;
@@ -532,7 +560,7 @@
             let currentCreator = db[currentTab][itemIndex].creator;
 
             if (role === 'Admin') {
-                currentCreator = document.getElementById('editCreator').value; // แอดมินแก้ผู้รับผิดชอบได้
+                currentCreator = document.getElementById('editCreator').value; 
                 isReceived = document.getElementById('editIsReceived').checked;
                 const customDate = document.getElementById('editCustomDate').value.trim();
 
@@ -605,6 +633,37 @@
                 document.getElementById('addUserModal').classList.add('hidden');
                 document.getElementById('newUsername').value = ''; document.getElementById('newPassword').value = '';
             }
+        }
+
+        // ฟังก์ชันเปลี่ยนรหัสผ่าน (ใหม่ล่าสุด)
+        async function changePassword() {
+            const oldP = document.getElementById('oldPwd').value;
+            const newP = document.getElementById('newPwd').value;
+            const confP = document.getElementById('confirmNewPwd').value;
+            const btn = document.getElementById('btnChangePwd');
+
+            if(!oldP || !newP || !confP) return alert('กรุณากรอกข้อมูลให้ครบทุกช่อง');
+            if(newP !== confP) return alert('รหัสผ่านใหม่ไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง!');
+
+            btn.disabled = true; btn.innerHTML = 'กำลังบันทึกรหัสผ่านใหม่...';
+
+            try {
+                const res = await fetch(API_URL, { 
+                    method: 'POST', 
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+                    body: JSON.stringify({ action: 'changePassword', username: username, oldPassword: oldP, newPassword: newP }) 
+                });
+                const result = await res.json();
+                if(result.status === 'success') {
+                    alert('เปลี่ยนรหัสผ่านสำเร็จ! กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
+                    logout(); // บังคับเตะออกจากระบบเพื่อให้ล็อกอินด้วยรหัสใหม่
+                } else {
+                    alert(result.message); // แจ้งเตือนถ้ารหัสเดิมไม่ถูก
+                }
+            } catch(e) {
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            }
+            btn.disabled = false; btn.innerHTML = 'บันทึกรหัสผ่านใหม่';
         }
 
         function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
