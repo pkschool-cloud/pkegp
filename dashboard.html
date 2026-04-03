@@ -7,60 +7,394 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Sarabun', sans-serif; }
-        .fade-in { animation: fadeIn 0.8s ease forwards; }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
+        
+        /* Animations */
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        .slide-in-right { animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .modal-enter { animation: modalEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes modalEnter { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        /* ซ่อนเมนูที่แอดมินเท่านั้นที่เห็น */
+        .admin-only { display: none; }
+        body[data-role="Admin"] .admin-only { display: flex; }
+        body[data-role="Admin"] .admin-only-block { display: block; }
+        body[data-role="Admin"] .admin-only-cell { display: table-cell; }
     </style>
     <script>
-        // ระบบป้องกันหน้าเว็บ: ตรวจสอบว่าล็อกอินมาหรือยัง
+        // ระบบป้องกันหน้าเว็บ
         if (sessionStorage.getItem('isLoggedIn') !== 'true') {
-            window.location.href = 'index.html'; // ถ้ายังไม่ล็อกอิน ให้เตะกลับไปหน้าแรก
+            window.location.href = 'index.html';
         }
     </script>
 </head>
-<body class="bg-slate-50 min-h-screen p-8 fade-in">
+<body class="text-slate-800 h-screen overflow-hidden flex">
 
-    <div class="max-w-6xl mx-auto">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b border-slate-200">
-            <div class="mb-4 sm:mb-0">
-                <h2 class="text-2xl font-bold text-blue-900">ระบบทะเบียนคุม จัดซื้อ-จัดจ้าง</h2>
-                <p class="text-slate-500 text-sm mt-1">
-                    ยินดีต้อนรับคุณ <span id="displayUser" class="font-semibold text-blue-700"></span> 
-                    (<span id="displayRole" class="text-xs"></span>)
-                </p>
+    <aside class="w-64 bg-slate-900 text-white flex flex-col transition-all duration-300 z-20 shadow-xl relative">
+        <div class="p-6 border-b border-slate-800">
+            <div class="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center mb-4 text-indigo-400 border border-indigo-500/30">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             </div>
-            
-            <button onclick="logout()" class="bg-white border border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600 font-medium py-2 px-4 rounded-lg shadow-sm transition-all duration-200 flex items-center">
+            <h1 class="text-lg font-bold tracking-wide">ระบบทะเบียนคุม</h1>
+            <p class="text-slate-400 text-xs mt-1">จัดซื้อ-จัดจ้าง v2.0</p>
+        </div>
+
+        <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+            <button onclick="switchTab('purchasing')" id="nav-purchasing" class="nav-btn w-full flex items-center px-4 py-3 bg-indigo-600 text-white rounded-xl transition-all duration-200">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                ทะเบียนจัดซื้อ
+            </button>
+            <button onclick="switchTab('hiring')" id="nav-hiring" class="nav-btn w-full flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-all duration-200">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                ทะเบียนจัดจ้าง
+            </button>
+            <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn admin-only w-full items-center px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-all duration-200">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                จัดการระบบ (Admin)
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <div class="flex items-center mb-4 px-2">
+                <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold mr-3" id="userInitial">U</div>
+                <div>
+                    <p class="text-sm font-medium text-white leading-tight" id="displayUser">Username</p>
+                    <p class="text-xs text-indigo-400" id="displayRole">Role</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="w-full flex items-center justify-center px-4 py-2 bg-slate-800 hover:bg-red-500/10 hover:text-red-400 text-slate-400 rounded-lg transition-colors text-sm font-medium">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                 ออกจากระบบ
             </button>
         </div>
+    </aside>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 transform hover:-translate-y-1 transition-transform duration-300">
-                <div class="text-slate-500 text-sm font-medium mb-1">รายการทั้งหมด</div>
-                <div class="text-4xl font-bold text-slate-800">128</div>
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNoZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9IiNlMmU4ZjAiLz48L3N2Zz4=')]">
+        
+        <div id="tab-data" class="flex-1 overflow-y-auto p-8 fade-in">
+            <div class="max-w-6xl mx-auto">
+                
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800" id="pageTitle">ทะเบียนจัดซื้อประจำปี</h2>
+                        <p class="text-slate-500 text-sm mt-1">จัดการรายการและรันเลขเอกสารอัตโนมัติ</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <select id="sortSelect" onchange="renderTable()" class="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 shadow-sm">
+                            <option value="desc">เรียงจาก ล่าสุด - เก่าสุด</option>
+                            <option value="asc">เรียงจาก เก่าสุด - ล่าสุด</option>
+                        </select>
+                        <button onclick="generateNewNumber()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-5 rounded-lg shadow-md shadow-indigo-200 transition-all flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            สร้างเลขใหม่
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-slate-200 overflow-hidden slide-in-right">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-600">
+                            <thead class="text-xs text-slate-500 uppercase bg-slate-50/50 border-b border-slate-200">
+                                <tr>
+                                    <th scope="col" class="px-6 py-4 font-semibold">เลขที่ออก</th>
+                                    <th scope="col" class="px-6 py-4 font-semibold w-1/3">ชื่อรายการ / โครงการ</th>
+                                    <th scope="col" class="px-6 py-4 font-semibold">วันที่รับเข้า</th>
+                                    <th scope="col" class="px-6 py-4 font-semibold">ผู้สร้าง</th>
+                                    <th scope="col" class="px-6 py-4 font-semibold text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody" class="divide-y divide-slate-100">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 transform hover:-translate-y-1 transition-transform duration-300">
-                <div class="text-slate-500 text-sm font-medium mb-1">รออนุมัติ</div>
-                <div class="text-4xl font-bold text-yellow-500">12</div>
+            
+            <div class="mt-8 text-center">
+                <p class="text-xs text-slate-400 font-light tracking-wide">© 2569 งานสื่อสารองค์กร สำนักหอสมุด มหาวิทยาลัยเชียงใหม่</p>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 transform hover:-translate-y-1 transition-transform duration-300">
-                <div class="text-slate-500 text-sm font-medium mb-1">ดำเนินการแล้วเสร็จ</div>
-                <div class="text-4xl font-bold text-green-500">116</div>
+        </div>
+
+        <div id="tab-settings" class="flex-1 overflow-y-auto p-8 hidden fade-in">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">จัดการระบบ (Admin Only)</h2>
+                
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        ตั้งค่าเลขรันเอกสารล่วงหน้า
+                    </h3>
+                    <p class="text-sm text-slate-500 mb-4">ขยับเลขเอกสารไปด้านหน้าหรือย้อนหลัง หากเลขปัจจุบันไม่สอดคล้องกับความเป็นจริง</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="p-4 border border-slate-100 bg-slate-50 rounded-xl">
+                            <label class="block text-sm font-medium text-slate-700 mb-2">เลขรันจัดซื้อล่าสุด (ซ.)</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="settingPurNum" class="bg-white border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5" value="5">
+                                <button class="bg-slate-800 hover:bg-slate-900 text-white px-4 rounded-lg text-sm transition-colors">บันทึก</button>
+                            </div>
+                        </div>
+                        <div class="p-4 border border-slate-100 bg-slate-50 rounded-xl">
+                            <label class="block text-sm font-medium text-slate-700 mb-2">เลขรันจัดจ้างล่าสุด (จ.)</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="settingHirNum" class="bg-white border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5" value="2">
+                                <button class="bg-slate-800 hover:bg-slate-900 text-white px-4 rounded-lg text-sm transition-colors">บันทึก</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="editModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden modal-enter border border-white/20">
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800" id="modalTitle">แก้ไขข้อมูล</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6 space-y-5">
+                <input type="hidden" id="editId">
+                <div>
+                    <label class="block text-sm font-medium text-slate-500 mb-1">เลขที่เอกสาร</label>
+                    <div class="text-lg font-bold text-indigo-700 bg-indigo-50 inline-block px-3 py-1 rounded-lg" id="editDocNum">ซ.001/2569</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">ชื่อรายการ / โครงการ</label>
+                    <input type="text" id="editProjectName" class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" placeholder="ระบุชื่อโครงการ...">
+                </div>
+                
+                <div class="admin-only-block bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <label class="flex items-start space-x-3 cursor-pointer">
+                        <div class="flex items-center h-5">
+                            <input id="editIsReceived" type="checkbox" class="w-5 h-5 text-indigo-600 bg-white border-slate-300 rounded focus:ring-indigo-500 focus:ring-2 transition-all">
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold text-slate-800">ยืนยันรับเข้าเอกสาร</span>
+                            <span class="text-xs text-slate-500 mt-0.5">ระบบจะบันทึกวันที่ปัจจุบัน (วันนี้) ลงในฐานข้อมูลทันที</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 rounded-lg transition-colors">ยกเลิก</button>
+                <button onclick="saveEdit()" class="px-6 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-md transition-colors">บันทึกข้อมูล</button>
             </div>
         </div>
     </div>
 
     <script>
-        // นำข้อมูลที่เก็บไว้มาแสดงผล
-        document.getElementById('displayUser').textContent = sessionStorage.getItem('username');
-        document.getElementById('displayRole').textContent = sessionStorage.getItem('userRole');
+        // --- 1. ข้อมูลจำลอง (Mock Data) สำหรับแสดงผลเบื้องต้น ---
+        let currentTab = 'purchasing';
+        const currentYear = "2569";
+        
+        let db = {
+            purchasing: [
+                { id: 1, docNum: "ซ.001/2569", name: "ซื้อหมึกพิมพ์ห้องสมุด", date: "01/04/2569", creator: "woody", isReceived: true },
+                { id: 2, docNum: "ซ.002/2569", name: "ซื้อกระดาษ A4 50 รีม", date: "02/04/2569", creator: "woody", isReceived: true },
+                { id: 3, docNum: "ซ.003/2569", name: "", date: "-", creator: "thian", isReceived: false }, // จองเลขไว้
+                { id: 4, docNum: "ซ.004/2569", name: "ซื้อเก้าอี้สำนักงาน", date: "03/04/2569", creator: "admin", isReceived: true }
+            ],
+            hiring: [
+                { id: 1, docNum: "จ.001/2569", name: "จ้างซ่อมบำรุงแอร์ชั้น 2", date: "02/04/2569", creator: "admin", isReceived: true }
+            ]
+        };
 
-        // ฟังก์ชันออกจากระบบ
+        // --- 2. ตั้งค่า User & Role ---
+        const username = sessionStorage.getItem('username') || 'Guest';
+        const role = sessionStorage.getItem('userRole') || 'User';
+        
+        document.getElementById('displayUser').textContent = username;
+        document.getElementById('displayRole').textContent = role;
+        document.getElementById('userInitial').textContent = username.charAt(0).toUpperCase();
+        
+        // เซ็ต attribute ให้อัตโนมัติ เพื่อให้ CSS เปิด/ปิด เมนูของ Admin
+        document.body.setAttribute('data-role', role);
+
+        // --- 3. ฟังก์ชันเปลี่ยนหน้าต่าง (Tab) ---
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // รีเซ็ตปุ่มเมนู
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.className = btn.className.replace('bg-indigo-600 text-white', 'text-slate-300 hover:bg-slate-800 hover:text-white');
+            });
+            
+            // ไฮไลต์ปุ่มที่เลือก
+            const activeBtn = document.getElementById(`nav-${tab}`);
+            activeBtn.className = activeBtn.className.replace('text-slate-300 hover:bg-slate-800 hover:text-white', 'bg-indigo-600 text-white');
+
+            // แสดงหน้าต่าง
+            if (tab === 'settings') {
+                document.getElementById('tab-data').classList.add('hidden');
+                document.getElementById('tab-settings').classList.remove('hidden');
+            } else {
+                document.getElementById('tab-settings').classList.add('hidden');
+                document.getElementById('tab-data').classList.remove('hidden');
+                
+                // อัปเดตหัวข้อและตาราง
+                document.getElementById('pageTitle').textContent = tab === 'purchasing' ? 'ทะเบียนจัดซื้อประจำปี' : 'ทะเบียนจัดจ้างประจำปี';
+                renderTable();
+            }
+        }
+
+        // --- 4. ฟังก์ชันแสดงข้อมูลตาราง ---
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const sortOrder = document.getElementById('sortSelect').value;
+            let data = [...db[currentTab]]; // Copy data
+
+            // เรียงลำดับ (ตาม ID จำลองการเรียงตามเวลา)
+            data.sort((a, b) => sortOrder === 'desc' ? b.id - a.id : a.id - b.id);
+
+            tbody.innerHTML = '';
+            
+            if(data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-slate-400">ยังไม่มีข้อมูลในระบบ</td></tr>`;
+                return;
+            }
+
+            data.forEach(item => {
+                const isPending = !item.name;
+                const statusHtml = item.isReceived 
+                    ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">รับแล้ว</span>`
+                    : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">รอรับเข้า</span>`;
+
+                // สิทธิ์การแก้ไข: Admin แก้ได้หมด, User แก้ได้เฉพาะตอนที่ชื่อยังว่าง (จองเลข)
+                const canEdit = role === 'Admin' || isPending;
+                
+                let actionHtml = '';
+                if (canEdit) {
+                    actionHtml += `<button onclick="openModal(${item.id})" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-md transition-colors mr-2">แก้ไข</button>`;
+                }
+                if (role === 'Admin') {
+                    actionHtml += `<button onclick="deleteItem(${item.id})" class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-md transition-colors">ลบ</button>`;
+                }
+                if(!canEdit && role !== 'Admin') {
+                    actionHtml = `<span class="text-xs text-slate-400">ไม่มีสิทธิ์</span>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "bg-white hover:bg-slate-50 transition-colors group";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap font-medium text-slate-900">${item.docNum}</td>
+                    <td class="px-6 py-4">
+                        ${isPending ? '<span class="text-slate-400 italic">รอระบุชื่อโครงการ...</span>' : `<span class="text-slate-700">${item.name}</span>`}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center gap-2">
+                            ${statusHtml}
+                            <span class="text-slate-500">${item.date}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-slate-500">${item.creator}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center font-medium">${actionHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- 5. ระบบ Modal แก้ไข/รับเข้า ---
+        function openModal(id) {
+            const item = db[currentTab].find(d => d.id === id);
+            if(!item) return;
+
+            document.getElementById('editId').value = item.id;
+            document.getElementById('editDocNum').textContent = item.docNum;
+            document.getElementById('editProjectName').value = item.name;
+            document.getElementById('editIsReceived').checked = item.isReceived;
+            
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        function saveEdit() {
+            const id = parseInt(document.getElementById('editId').value);
+            const newName = document.getElementById('editProjectName').value.trim();
+            const isReceived = document.getElementById('editIsReceived').checked;
+            
+            const itemIndex = db[currentTab].findIndex(d => d.id === id);
+            
+            if(itemIndex > -1) {
+                db[currentTab][itemIndex].name = newName;
+                
+                // ถ้าแอดมินติ๊กรับเข้า และของเดิมยังไม่รับเข้า ให้บันทึกวันที่วันนี้
+                if (role === 'Admin' && isReceived && !db[currentTab][itemIndex].isReceived) {
+                    const today = new Date();
+                    db[currentTab][itemIndex].date = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear() + 543}`;
+                }
+                
+                if (role === 'Admin') {
+                    db[currentTab][itemIndex].isReceived = isReceived;
+                }
+                
+                closeModal();
+                renderTable();
+            }
+        }
+
+        // --- 6. สร้างเลขใหม่ (รันเลขอัตโนมัติ) ---
+        function generateNewNumber() {
+            const dataList = db[currentTab];
+            let nextNum = 1;
+            
+            if (dataList.length > 0) {
+                // หาเลขที่มากที่สุดในระบบปัจจุบัน
+                const maxId = Math.max(...dataList.map(item => {
+                    // แตกข้อความ "ซ.004/2569" เพื่อเอาเลข 4 ออกมา
+                    const numPart = item.docNum.split('/')[0].substring(2);
+                    return parseInt(numPart) || 0;
+                }));
+                nextNum = maxId + 1;
+            }
+
+            const prefix = currentTab === 'purchasing' ? 'ซ.' : 'จ.';
+            const paddedNum = nextNum.toString().padStart(3, '0'); // เติม 0 ด้านหน้าให้ครบ 3 หลัก
+            const newDocNum = `${prefix}${paddedNum}/${currentYear}`;
+
+            // สร้าง Record ใหม่ (จองเลข)
+            db[currentTab].push({
+                id: Date.now(), // ใช้ timestamp จำลอง ID
+                docNum: newDocNum,
+                name: "",
+                date: "-",
+                creator: username,
+                isReceived: false
+            });
+
+            // บังคับเปลี่ยน sort เป็น มากไปน้อย เพื่อให้เห็นเลขที่เพิ่งสร้างอยู่บนสุด
+            document.getElementById('sortSelect').value = 'desc';
+            renderTable();
+        }
+
+        // --- 7. ฟังก์ชันลบ (Admin เท่านั้น) ---
+        function deleteItem(id) {
+            if(confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้? (การลบอาจทำให้เลขรันข้ามได้)')) {
+                db[currentTab] = db[currentTab].filter(d => d.id !== id);
+                renderTable();
+            }
+        }
+
+        // เริ่มต้นเรนเดอร์หน้าแรก
+        renderTable();
+
         function logout() {
-            sessionStorage.clear(); // ล้างข้อมูล Session
-            window.location.href = 'index.html'; // กลับไปหน้า Login
+            sessionStorage.clear();
+            window.location.href = 'index.html';
         }
     </script>
 </body>
