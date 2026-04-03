@@ -2,120 +2,65 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | ระบบทะเบียนคุม จัดซื้อ-จัดจ้าง</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Sarabun', sans-serif; }</style>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        .fade-in { animation: fadeIn 0.8s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+    <script>
+        // ระบบป้องกันหน้าเว็บ: ตรวจสอบว่าล็อกอินมาหรือยัง
+        if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = 'index.html'; // ถ้ายังไม่ล็อกอิน ให้เตะกลับไปหน้าแรก
+        }
+    </script>
 </head>
-<body class="bg-slate-50 min-h-screen pb-20">
+<body class="bg-slate-50 min-h-screen p-8 fade-in">
 
-    <nav class="bg-indigo-950 text-white p-6 shadow-xl sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-4">
-                <div class="p-2 bg-indigo-500 rounded-lg">🚀</div>
-                <div>
-                    <h1 class="text-xl font-bold">ระบบทะเบียนคุมจัดซื้อ-จัดจ้าง</h1>
-                    <p class="text-xs text-indigo-300">Internal Document Control 2026</p>
-                </div>
+    <div class="max-w-6xl mx-auto">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b border-slate-200">
+            <div class="mb-4 sm:mb-0">
+                <h2 class="text-2xl font-bold text-blue-900">ระบบทะเบียนคุม จัดซื้อ-จัดจ้าง</h2>
+                <p class="text-slate-500 text-sm mt-1">
+                    ยินดีต้อนรับคุณ <span id="displayUser" class="font-semibold text-blue-700"></span> 
+                    (<span id="displayRole" class="text-xs"></span>)
+                </p>
             </div>
-            <div class="text-right border-l pl-6 border-indigo-800">
-                <p class="text-sm font-light">ผู้ปฏิบัติงาน: <span id="displayUserName" class="font-bold text-white">กำลังโหลด...</span></p>
-                <p class="text-[10px] uppercase tracking-widest text-indigo-400">ระดับ: <span id="displayUserRole">...</span></p>
-            </div>
-        </div>
-    </nav>
-
-    <main class="max-w-7xl mx-auto p-8 space-y-10">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="bg-white p-8 rounded-3xl shadow-sm border-t-8 border-emerald-500">
-                <h2 class="text-emerald-700 font-bold text-xl mb-4">🛒 หมวดจัดซื้อ (ซ.)</h2>
-                <input id="buyName" type="text" placeholder="ระบุชื่อโครงการจัดซื้อ..." class="w-full border-2 border-slate-100 p-4 rounded-2xl mb-4 focus:border-emerald-500 outline-none transition-all">
-                <button onclick="handleBtn('ซ')" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all">ออกเลขจัดซื้อ</button>
-            </div>
-            <div class="bg-white p-8 rounded-3xl shadow-sm border-t-8 border-blue-500">
-                <h2 class="text-blue-700 font-bold text-xl mb-4">🛠️ หมวดจัดจ้าง (จ.)</h2>
-                <input id="hireName" type="text" placeholder="ระบุชื่อโครงการจัดจ้าง..." class="w-full border-2 border-slate-100 p-4 rounded-2xl mb-4 focus:border-blue-500 outline-none transition-all">
-                <button onclick="handleBtn('จ')" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all">ออกเลขจัดจ้าง</button>
-            </div>
+            
+            <button onclick="logout()" class="bg-white border border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600 font-medium py-2 px-4 rounded-lg shadow-sm transition-all duration-200 flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                ออกจากระบบ
+            </button>
         </div>
 
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
-            <table class="w-full text-left">
-                <thead class="bg-slate-50 text-slate-500 text-sm uppercase">
-                    <tr>
-                        <th class="p-6">เลขทะเบียน</th>
-                        <th class="p-6">ชื่อโครงการ</th>
-                        <th class="p-6">วันที่รับเข้า</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody" class="divide-y divide-slate-50">
-                    </tbody>
-            </table>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 transform hover:-translate-y-1 transition-transform duration-300">
+                <div class="text-slate-500 text-sm font-medium mb-1">รายการทั้งหมด</div>
+                <div class="text-4xl font-bold text-slate-800">128</div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 transform hover:-translate-y-1 transition-transform duration-300">
+                <div class="text-slate-500 text-sm font-medium mb-1">รออนุมัติ</div>
+                <div class="text-4xl font-bold text-yellow-500">12</div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 transform hover:-translate-y-1 transition-transform duration-300">
+                <div class="text-slate-500 text-sm font-medium mb-1">ดำเนินการแล้วเสร็จ</div>
+                <div class="text-4xl font-bold text-green-500">116</div>
+            </div>
         </div>
-    </main>
-
-    <footer class="text-center text-slate-400 text-xs py-10 space-y-2">
-        <p>develop by <span class="font-bold text-slate-600">Thianrawich Pichayanandhakul</span></p>
-        <p>© 2026 copyright | All Rights Reserved</p>
-    </footer>
+    </div>
 
     <script>
-        const uName = sessionStorage.getItem('uName');
-        const uRole = sessionStorage.getItem('uRole');
-        document.getElementById('displayUserName').textContent = uName;
-        document.getElementById('displayUserRole').textContent = uRole === 'admin' ? 'แอดมินผู้ดูแลระบบ' : 'ผู้ใช้งานทั่วไป';
+        // นำข้อมูลที่เก็บไว้มาแสดงผล
+        document.getElementById('displayUser').textContent = sessionStorage.getItem('username');
+        document.getElementById('displayRole').textContent = sessionStorage.getItem('userRole');
 
-        // โหลดข้อมูลจาก Sheet ครั้งแรก
-        loadData();
-
-        function loadData() {
-            google.script.run.withSuccessHandler(renderTable).getAllRecords();
-        }
-
-        function handleBtn(type) {
-            const input = document.getElementById(type === 'ซ' ? 'buyName' : 'hireName');
-            if(!input.value) return alert('กรุณากรอกชื่อโครงการ');
-
-            // ดึงข้อมูลเดิมเพื่อรันเลข
-            google.script.run.withSuccessHandler(function(data) {
-                const count = data.filter(r => r[1] === type).length + 1;
-                const docNum = `${type}.${String(count).padStart(3, '0')}/2569`;
-                
-                const newObj = { id: Date.now(), type: type, docNum: docNum, name: input.value };
-                
-                // บันทึกลง Google Sheet
-                google.script.run.withSuccessHandler(() => {
-                    input.value = '';
-                    loadData();
-                }).saveNewProject(newObj);
-            }).getAllRecords();
-        }
-
-        function renderTable(data) {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = data.reverse().map(r => {
-                const id = r[0], docNum = r[2], name = r[3], date = r[4];
-                let dateDisplay = '';
-
-                if (uRole === 'admin') {
-                    dateDisplay = `<input type="date" value="${date}" onchange="updateDate('${id}', this.value)" class="border p-2 rounded-lg bg-indigo-50 text-indigo-700">`;
-                } else {
-                    if (!date) {
-                        dateDisplay = `<input type="date" onchange="updateDate('${id}', this.value)" class="border p-2 rounded-lg border-orange-300">`;
-                    } else {
-                        dateDisplay = `<span class="bg-slate-100 px-4 py-2 rounded-full text-slate-500 text-sm">🔒 ${date}</span>`;
-                    }
-                }
-
-                return `<tr>
-                    <td class="p-6 font-bold text-indigo-900">${docNum}</td>
-                    <td class="p-6 text-slate-600">${name}</td>
-                    <td class="p-6">${dateDisplay}</td>
-                </tr>`;
-            }).join('');
-        }
-
-        function updateDate(id, val) {
-            google.script.run.withSuccessHandler(loadData).updateProjectDate(id, val);
+        // ฟังก์ชันออกจากระบบ
+        function logout() {
+            sessionStorage.clear(); // ล้างข้อมูล Session
+            window.location.href = 'index.html'; // กลับไปหน้า Login
         }
     </script>
 </body>
