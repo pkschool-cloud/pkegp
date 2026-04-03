@@ -30,8 +30,260 @@
         body[data-role="Admin"] .admin-only-cell { display: table-cell; }
     </style>
     <script>
-        // ระบบป้องกันหน้าเว็บ
-        if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+        // ⚠️ เอา URL Web App จากหน้า index.html มาใส่ตรงนี้ครับ
+        const API_URL = "https://script.google.com/macros/s/AKfycbx65kx-ftqSyYIcbiR7t2pC3nK-MYFkJfe-rjjnK27i__IURKsFT14c_yYrYubm0_MCFw/exec";
+        
+        let currentTab = 'purchasing';
+        const currentYear = "2569";
+        
+        // ฐานข้อมูลเริ่มต้น (รอโหลดจาก Google Sheets)
+        let db = { purchasing: [], hiring: [] };
+
+        // --- ตั้งค่า User & Role ---
+        const username = sessionStorage.getItem('username') || 'Guest';
+        const role = sessionStorage.getItem('userRole') || 'User';
+        
+        document.getElementById('displayUser').textContent = username;
+        document.getElementById('displayRole').textContent = role;
+        document.getElementById('userInitial').textContent = username.charAt(0).toUpperCase();
+        document.body.setAttribute('data-role', role);
+
+        // --- โหลดข้อมูลจาก Google Sheets ตอนเปิดหน้าเว็บ ---
+        async function fetchInitialData() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-indigo-500 font-medium"><svg class="animate-spin h-5 w-5 mr-3 inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>กำลังดึงข้อมูลจากระบบ...</td></tr>`;
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action: 'getData' })
+                });
+                const result = await response.json();
+                
+                if(result.status === 'success') {
+                    db = result.data;
+                    renderTable();
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-red-500">เกิดข้อผิดพลาด: ${result.message}</td></tr>`;
+                }
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-red-500">ไม่สามารถเชื่อมต่อฐานข้อมูลได้</td></tr>`;
+            }
+        }
+
+        // โหลดข้อมูลทันที
+        fetchInitialData();
+
+        // --- ฟังก์ชันเปลี่ยนหน้าต่าง (Tab) ---
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.className = btn.className.replace('bg-indigo-600 text-white', 'text-slate-300 hover:bg-slate-800 hover:text-white'));
+            const activeBtn = document.getElementById(`nav-${tab}`);
+            activeBtn.className = activeBtn.className.replace('text-slate-300 hover:bg-slate-800 hover:text-white', 'bg-indigo-600 text-white');
+
+            if (tab === 'settings') {
+                document.getElementById('tab-data').classList.add('hidden');
+                document.getElementById('tab-settings').classList.remove('hidden');
+            } else {
+                document.getElementById('tab-settings').classList.add('hidden');
+                document.getElementById('tab-data').classList.remove('hidden');
+                document.getElementById('pageTitle').textContent = tab === 'purchasing' ? 'ทะเบียนจัดซื้อประจำปี' : 'ทะเบียนจัดจ้างประจำปี';
+                renderTable();
+            }
+        }
+
+        // --- ฟังก์ชันแสดงข้อมูลตาราง ---
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const sortOrder = document.getElementById('sortSelect').value;
+            let data = [...db[currentTab]]; 
+
+            data.sort((a, b) => sortOrder === 'desc' ? b.id - a.id : a.id - b.id);
+            tbody.innerHTML = '';
+            
+            if(data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-slate-400">ยังไม่มีข้อมูลในระบบ</td></tr>`;
+                return;
+            }
+
+            data.forEach(item => {
+                const isPending = !item.name || item.name.trim() === '';
+                const statusHtml = item.isReceived 
+                    ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">รับแล้ว</span>`
+                    : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">รอรับเข้า</span>`;
+
+                const canEdit = role === 'Admin' || isPending;
+                let actionHtml = '';
+                
+                if (canEdit) {
+                    actionHtml += `<button onclick="openModal(${item.id})" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-md transition-colors mr-2">แก้ไข</button>`;
+                }
+                if (role === 'Admin') {
+                    actionHtml += `<button onclick="deleteItem(${item.id})" class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-md transition-colors">ลบ</button>`;
+                }
+                if(!canEdit && role !== 'Admin') {
+                    actionHtml = `<span class="text-xs text-slate-400">อ่านได้อย่างเดียว</span>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "bg-white hover:bg-slate-50 transition-colors group";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap font-medium text-slate-900">${item.docNum}</td>
+                    <td class="px-6 py-4">${isPending ? '<span class="text-slate-400 italic">รอระบุชื่อโครงการ...</span>' : `<span class="text-slate-700">${item.name}</span>`}</td>
+                    <td class="px-6 py-4 whitespace-nowrap"><div class="flex items-center gap-2">${statusHtml}<span class="text-slate-500">${item.date}</span></div></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-slate-500">${item.creator}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center font-medium">${actionHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- ระบบ Modal ---
+        function openModal(id) {
+            const item = db[currentTab].find(d => d.id === id);
+            if(!item) return;
+
+            document.getElementById('editId').value = item.id;
+            document.getElementById('editDocNum').textContent = item.docNum;
+            document.getElementById('editProjectName').value = item.name;
+            document.getElementById('editIsReceived').checked = item.isReceived;
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('editModal').classList.add('hidden'); }
+
+        // --- บันทึกการแก้ไขลงฐานข้อมูล ---
+        async function saveEdit() {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = 'กำลังบันทึก...';
+            btn.disabled = true;
+
+            const id = document.getElementById('editId').value;
+            const newName = document.getElementById('editProjectName').value.trim();
+            const isReceived = document.getElementById('editIsReceived').checked;
+            
+            const itemIndex = db[currentTab].findIndex(d => d.id == id);
+            let updateDate = db[currentTab][itemIndex].date;
+
+            if (role === 'Admin' && isReceived && !db[currentTab][itemIndex].isReceived) {
+                const today = new Date();
+                updateDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear() + 543}`;
+            }
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({
+                        action: 'updateDoc',
+                        type: currentTab,
+                        id: id,
+                        name: newName,
+                        date: updateDate,
+                        isReceived: role === 'Admin' ? isReceived : db[currentTab][itemIndex].isReceived
+                    })
+                });
+                
+                const result = await response.json();
+                if(result.status === 'success') {
+                    db[currentTab][itemIndex].name = newName;
+                    db[currentTab][itemIndex].date = updateDate;
+                    if(role === 'Admin') db[currentTab][itemIndex].isReceived = isReceived;
+                    renderTable();
+                    closeModal();
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                alert("เกิดข้อผิดพลาดในการบันทึก");
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // --- สร้างเลขใหม่ลงฐานข้อมูล (จองเลข) ---
+        async function generateNewNumber() {
+            const btn = event.currentTarget;
+            btn.classList.add('opacity-50', 'cursor-wait');
+            btn.disabled = true;
+
+            const dataList = db[currentTab];
+            let nextNum = 1;
+            if (dataList.length > 0) {
+                const maxId = Math.max(...dataList.map(item => {
+                    const numPart = item.docNum.split('/')[0].substring(2);
+                    return parseInt(numPart) || 0;
+                }));
+                nextNum = maxId + 1;
+            }
+
+            const prefix = currentTab === 'purchasing' ? 'ซ.' : 'จ.';
+            const paddedNum = nextNum.toString().padStart(3, '0');
+            const newDocNum = `${prefix}${paddedNum}/${currentYear}`;
+            const newId = Date.now();
+
+            const newRecord = {
+                id: newId,
+                docNum: newDocNum,
+                name: "",
+                date: "-",
+                creator: username,
+                isReceived: false
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({
+                        action: 'createDoc',
+                        type: currentTab,
+                        ...newRecord
+                    })
+                });
+                const result = await response.json();
+                if(result.status === 'success') {
+                    db[currentTab].push(newRecord);
+                    document.getElementById('sortSelect').value = 'desc';
+                    renderTable();
+                } else {
+                    alert('สร้างเลขไม่สำเร็จ: ' + result.message);
+                }
+            } catch(e) {
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            } finally {
+                btn.classList.remove('opacity-50', 'cursor-wait');
+                btn.disabled = false;
+            }
+        }
+
+        // --- ลบข้อมูล ---
+        async function deleteItem(id) {
+            if(confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้? (ระบบจะลบออกจากฐานข้อมูลถาวร)')) {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { "Content-Type": "text/plain;charset=utf-8" },
+                        body: JSON.stringify({ action: 'deleteDoc', type: currentTab, id: id })
+                    });
+                    const result = await response.json();
+                    if(result.status === 'success') {
+                        db[currentTab] = db[currentTab].filter(d => d.id !== id);
+                        renderTable();
+                    } else {
+                        alert(result.message);
+                    }
+                } catch(e) {
+                    alert('ไม่สามารถลบข้อมูลได้');
+                }
+            }
+        }
+
+        function logout() {
+            sessionStorage.clear();
             window.location.href = 'index.html';
         }
     </script>
