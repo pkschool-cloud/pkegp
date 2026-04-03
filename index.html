@@ -64,7 +64,7 @@
 
     <script>
         // ⚠️ เอา URL Web App จาก Google Apps Script มาใส่ตรงนี้
-        const API_URL = "YOUR_GOOGLE_WEB_APP_URL_HERE";
+        const API_URL = "https://script.google.com/macros/s/AKfycbx65kx-ftqSyYIcbiR7t2pC3nK-MYFkJfe-rjjnK27i__IURKsFT14c_yYrYubm0_MCFw/exec";
 
         async function handleLogin(event) {
             event.preventDefault(); 
@@ -77,7 +77,7 @@
             const errorMsg = document.getElementById('errorMessage');
             const errorText = document.getElementById('errorText');
 
-            if(API_URL === "YOUR_GOOGLE_WEB_APP_URL_HERE") {
+            if(API_URL === "https://script.google.com/macros/s/AKfycbx65kx-ftqSyYIcbiR7t2pC3nK-MYFkJfe-rjjnK27i__IURKsFT14c_yYrYubm0_MCFw/exec") {
                 showError("กรุณาใส่ API_URL ในโค้ดก่อนใช้งาน");
                 return;
             }
