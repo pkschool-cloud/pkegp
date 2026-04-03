@@ -62,8 +62,8 @@
         </div>
     </div>
 
-    <script>
-        // ⚠️ เอา URL Web App จาก Google Apps Script มาใส่ตรงนี้
+<script>
+        // ใส่ URL ถูกต้องแล้วครับ
         const API_URL = "https://script.google.com/macros/s/AKfycbx65kx-ftqSyYIcbiR7t2pC3nK-MYFkJfe-rjjnK27i__IURKsFT14c_yYrYubm0_MCFw/exec";
 
         async function handleLogin(event) {
@@ -77,10 +77,7 @@
             const errorMsg = document.getElementById('errorMessage');
             const errorText = document.getElementById('errorText');
 
-            if(API_URL === "https://script.google.com/macros/s/AKfycbx65kx-ftqSyYIcbiR7t2pC3nK-MYFkJfe-rjjnK27i__IURKsFT14c_yYrYubm0_MCFw/exec") {
-                showError("กรุณาใส่ API_URL ในโค้ดก่อนใช้งาน");
-                return;
-            }
+            // ลบเงื่อนไข if ที่ดัก Error ผิดพลาดออกไปแล้ว
 
             // เริ่มสถานะ Loading
             errorMsg.classList.add('hidden');
@@ -90,23 +87,26 @@
             spinner.classList.remove('hidden');
 
             try {
-                // ส่งข้อมูลไปที่ GAS API (ใช้ POST แบบไม่ระบุ Content-Type เพื่อเลี่ยง CORS Preflight Error)
+                // ส่งข้อมูลไปที่ GAS API พร้อมใส่ Headers กันเบราว์เซอร์บล็อก
                 const response = await fetch(API_URL, {
                     method: 'POST',
+                    headers: {
+                        "Content-Type": "text/plain;charset=utf-8",
+                    },
                     body: JSON.stringify({ username: user, password: pass })
                 });
 
                 const result = await response.json();
 
                 if (result.status === 'success') {
-                    // เก็บสถานะว่า Logged in แล้ว พร้อม Role เผื่อเอาไปใช้ในหน้า Dashboard
+                    // เก็บสถานะว่า Logged in แล้ว 
                     sessionStorage.setItem('isLoggedIn', 'true');
                     sessionStorage.setItem('userRole', result.role);
                     sessionStorage.setItem('username', user);
                     
                     btnText.textContent = "เข้าสู่ระบบสำเร็จ กำลังพาไปหน้าหลัก...";
                     
-                    // เปลี่ยนหน้าเว็บไปยังไฟล์ dashboard.html ที่อยู่บน GitHub เดียวกัน
+                    // เปลี่ยนหน้าเว็บไปยังไฟล์ dashboard.html 
                     setTimeout(() => {
                         window.location.href = 'dashboard.html';
                     }, 500);
