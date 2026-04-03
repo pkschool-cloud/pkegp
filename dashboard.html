@@ -3,133 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบออกเลขรับส่งเอกสาร</title>
+    <title>Dashboard | ระบบทะเบียนคุม จัดซื้อ-จัดจ้าง</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        /* ซ่อนลูกศรขึ้นลงในช่อง input number */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
 </head>
-<body class="bg-gray-100 p-8 font-sans">
+<body class="bg-gray-50 min-h-screen">
 
-    <div class="max-w-5xl mx-auto space-y-6">
-        <div class="bg-white p-4 rounded-lg shadow flex justify-between items-center">
-            <h1 class="text-xl font-bold text-gray-800">ระบบทะเบียนคุม จัดซื้อ-จัดจ้าง ปี 2569</h1>
-            <div class="flex items-center space-x-2">
-                <label class="font-semibold text-sm">จำลองสิทธิ์:</label>
-                <select id="roleSelector" onchange="toggleRole()" class="border p-2 rounded text-sm bg-blue-50">
-                    <option value="user">ผู้ใช้งานทั่วไป</option>
-                    <option value="admin">ผู้ดูแลระบบ (Admin)</option>
-                </select>
-            </div>
-        </div>
-
-        <div id="adminPanel" class="bg-red-50 border-l-4 border-red-500 p-4 rounded shadow hidden">
-            <h2 class="font-bold text-red-700 mb-2">ส่วนจัดการของ Admin (ตั้งค่าเลขรันถัดไป)</h2>
-            <div class="flex space-x-4">
-                <div>
-                    <label class="text-sm">เลข ซ. ถัดไป:</label>
-                    <input type="number" id="nextBuy" class="border p-1 w-20 rounded" min="1">
-                    <button onclick="updateCounter('ซ')" class="bg-red-500 text-white px-2 py-1 rounded text-sm">อัปเดต</button>
+    <nav class="bg-blue-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-8 h-8 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <h1 class="text-xl font-bold tracking-wide">ระบบทะเบียนคุม จัดซื้อ-จัดจ้าง ประจำปี ๒๕๖๙</h1>
                 </div>
-                <div>
-                    <label class="text-sm">เลข จ. ถัดไป:</label>
-                    <input type="number" id="nextHire" class="border p-1 w-20 rounded" min="1">
-                    <button onclick="updateCounter('จ')" class="bg-red-500 text-white px-2 py-1 rounded text-sm">อัปเดต</button>
+                <div class="flex items-center space-x-4">
+                    <span id="roleBadge" class="px-3 py-1 text-sm font-semibold rounded-full bg-blue-800 border border-blue-700 shadow-inner">
+                        กำลังตรวจสอบสิทธิ์...
+                    </span>
+                    <button onclick="logout()" class="hover:bg-red-600 bg-red-500 text-white text-sm font-semibold px-4 py-2 rounded transition">
+                        ออกจากระบบ
+                    </button>
                 </div>
             </div>
         </div>
+    </nav>
 
-        <div class="bg-white p-6 rounded-lg shadow">
-            <h2 class="font-bold text-lg mb-4">เพิ่มโครงการใหม่</h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <div>
-                    <label class="block text-sm font-semibold mb-1">หมวดหมู่</label>
-                    <select id="docType" class="w-full border p-2 rounded focus:outline-blue-500">
-                        <option value="ซ">จัดซื้อ (ซ.)</option>
-                        <option value="จ">จัดจ้าง (จ.)</option>
-                    </select>
+    <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-6">
+
+        <div id="adminPanel" class="bg-white border-t-4 border-purple-600 rounded-lg shadow-sm p-5 hidden">
+            <div class="flex items-center mb-3 text-purple-700">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <h2 class="font-bold text-lg">แผงควบคุมผู้ดูแลระบบ (ตั้งค่าเลขรันถัดไป)</h2>
+            </div>
+            <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-6">
+                <div class="flex items-center bg-gray-50 px-4 py-2 rounded border">
+                    <label class="text-sm font-semibold mr-3 text-gray-700">เลข ซ. ถัดไป:</label>
+                    <input type="number" id="nextBuy" class="border border-gray-300 p-1 w-20 rounded text-center mr-2 font-mono text-blue-600 font-bold" min="1">
+                    <button onclick="updateCounter('ซ')" class="bg-purple-100 text-purple-700 hover:bg-purple-200 px-3 py-1 rounded text-sm font-semibold transition">บันทึก</button>
                 </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-semibold mb-1">ชื่อโครงการ / รายละเอียด</label>
-                    <input type="text" id="projectName" class="w-full border p-2 rounded focus:outline-blue-500" placeholder="ระบุชื่อโครงการ...">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold mb-1">วันที่รับเข้า</label>
-                    <input type="date" id="docDate" class="w-full border p-2 rounded bg-gray-100" readonly>
+                <div class="flex items-center bg-gray-50 px-4 py-2 rounded border">
+                    <label class="text-sm font-semibold mr-3 text-gray-700">เลข จ. ถัดไป:</label>
+                    <input type="number" id="nextHire" class="border border-gray-300 p-1 w-20 rounded text-center mr-2 font-mono text-blue-600 font-bold" min="1">
+                    <button onclick="updateCounter('จ')" class="bg-purple-100 text-purple-700 hover:bg-purple-200 px-3 py-1 rounded text-sm font-semibold transition">บันทึก</button>
                 </div>
             </div>
-
-            <div class="mb-4 flex items-center space-x-2 bg-yellow-50 p-2 rounded border border-yellow-200">
-                <input type="checkbox" id="isRetro" onchange="toggleRetro()">
-                <label for="isRetro" class="text-sm font-semibold text-yellow-800">ระบุเลขเอง (กรณีเพิ่มย้อนหลัง ในเลขที่ถูกข้ามไป)</label>
-                <input type="number" id="retroNumber" class="border p-1 w-24 rounded hidden" placeholder="เช่น 5" min="1">
-            </div>
-
-            <button onclick="addProject()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">
-                บันทึกและออกเลขทะเบียน
-            </button>
         </div>
 
-        <div class="bg-white p-6 rounded-lg shadow">
-            <h2 class="font-bold text-lg mb-4">รายการโครงการ</h2>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-blue-50 px-6 py-4 border-b border-gray-200">
+                <h2 class="font-bold text-lg text-blue-800">+ ออกเลขรับส่งเอกสารโครงการใหม่</h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-5 mb-5">
+                    <div class="md:col-span-3">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">หมวดหมู่เอกสาร <span class="text-red-500">*</span></label>
+                        <select id="docType" class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white">
+                            <option value="ซ">จัดซื้อ (ซ.)</option>
+                            <option value="จ">จัดจ้าง (จ.)</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">ชื่อโครงการ / รายละเอียด <span class="text-red-500">*</span></label>
+                        <input type="text" id="projectName" class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="ระบุชื่อโครงการ หรือรายละเอียดเอกสาร...">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">วันที่รับเข้าเอกสาร</label>
+                        <input type="date" id="docDate" class="w-full border border-gray-300 p-2.5 rounded-lg outline-none transition text-gray-700" readonly>
+                        <p id="dateNotice" class="text-xs text-red-500 mt-1 hidden">แก้ไขได้เฉพาะ Admin เท่านั้น</p>
+                    </div>
+                </div>
+
+                <div class="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200 flex flex-col sm:flex-row sm:items-center">
+                    <div class="flex items-center mb-3 sm:mb-0">
+                        <input type="checkbox" id="isRetro" onchange="toggleRetro()" class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 rounded focus:ring-yellow-500 cursor-pointer">
+                        <label for="isRetro" class="ml-2 text-sm font-semibold text-yellow-800 cursor-pointer">ระบุเลขเอง (แทรกย้อนหลังสำหรับเลขที่ข้ามไป)</label>
+                    </div>
+                    <div id="retroInputContainer" class="hidden sm:ml-4 flex items-center">
+                        <span class="text-sm text-yellow-700 mr-2">เลขที่ต้องการแทรก:</span>
+                        <input type="number" id="retroNumber" class="border border-yellow-300 p-1.5 w-24 rounded focus:ring-2 focus:ring-yellow-400 outline-none text-center bg-white" placeholder="เช่น 5" min="1">
+                    </div>
+                </div>
+
+                <button onclick="addProject()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition duration-200 flex justify-center items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                    บันทึกข้อมูลและออกเลขทะเบียน
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <h2 class="font-bold text-lg text-gray-800">ประวัติการออกเลขทะเบียน (ล่าสุด)</h2>
+                <span class="text-xs text-gray-500 bg-white border px-2 py-1 rounded">ปีงบประมาณ 2569</span>
+            </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full table-auto border-collapse border border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-100">
                         <tr>
-                            <th class="border p-2 text-left w-1/5">เลขทะเบียน</th>
-                            <th class="border p-2 text-left w-1/5">หมวดหมู่</th>
-                            <th class="border p-2 text-left w-2/5">ชื่อโครงการ</th>
-                            <th class="border p-2 text-left w-1/5">วันที่รับเข้า</th>
-                            <th class="border p-2 text-center w-1/5 admin-only hidden">จัดการ (Admin)</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-1/6">เลขทะเบียน</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-1/6">หมวดหมู่</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-3/6">ชื่อโครงการ</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-1/6">วันที่รับเข้า</th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider admin-only hidden">การจัดการ</th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody">
-                        </tbody>
+                    <tbody id="tableBody" class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="5" class="px-6 py-10 text-center text-gray-400 text-sm">ยังไม่มีข้อมูลโครงการ</td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <script>
-        // State Management
+        // --- ส่วนข้อมูลและ State ของระบบ ---
         let counters = { 'ซ': 1, 'จ': 1 };
-        let year = 2569;
-        let records = [];
-        let currentRole = 'user';
+        const year = 2569;
+        let records = []; // ในอนาคตคุณสามารถเขียนโค้ดให้โหลดข้อมูลจาก Google Sheet มาเก็บที่นี่ได้
+        
+        // ดึงสิทธิ์จาก Session ที่บันทึกไว้ตอน Login (ถ้าไม่มีให้มองเป็น user ธรรมดา)
+        const currentRole = sessionStorage.getItem('userRole') || 'user'; 
 
-        // Initialize Date
-        document.getElementById('docDate').valueAsDate = new Date();
-        updateAdminPanelValues();
+        // เริ่มทำงานทันทีเมื่อเปิดหน้า
+        window.onload = function() {
+            initSystem();
+        };
 
-        function toggleRole() {
-            currentRole = document.getElementById('roleSelector').value;
+        function initSystem() {
             const dateInput = document.getElementById('docDate');
+            dateInput.valueAsDate = new Date(); // เซ็ตวันปัจจุบัน
+            
+            const roleBadge = document.getElementById('roleBadge');
             const adminPanel = document.getElementById('adminPanel');
-            const adminCols = document.querySelectorAll('.admin-only');
-
+            const dateNotice = document.getElementById('dateNotice');
+            
             if (currentRole === 'admin') {
-                dateInput.removeAttribute('readonly');
-                dateInput.classList.remove('bg-gray-100');
+                // โหมด Admin
+                roleBadge.textContent = '👨‍💻 ผู้ดูแลระบบ (Admin)';
+                roleBadge.classList.replace('bg-blue-800', 'bg-purple-600');
+                roleBadge.classList.replace('border-blue-700', 'border-purple-500');
+                
+                dateInput.removeAttribute('readonly'); // เปิดให้แก้เวลาได้
+                dateInput.classList.replace('bg-gray-100', 'bg-white');
+                dateInput.classList.add('focus:ring-2', 'focus:ring-blue-500');
+                
                 adminPanel.classList.remove('hidden');
-                adminCols.forEach(el => el.classList.remove('hidden'));
+                
             } else {
+                // โหมด User ทั่วไป
+                roleBadge.textContent = '👤 ผู้ปฏิบัติงาน';
                 dateInput.setAttribute('readonly', true);
-                dateInput.classList.add('bg-gray-100');
-                dateInput.valueAsDate = new Date(); // Reset to today for user
-                adminPanel.classList.add('hidden');
-                adminCols.forEach(el => el.classList.add('hidden'));
+                dateInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+                dateNotice.classList.remove('hidden');
             }
+
+            updateAdminPanelValues();
             renderTable();
         }
 
         function toggleRetro() {
             const isRetro = document.getElementById('isRetro').checked;
+            const retroInputContainer = document.getElementById('retroInputContainer');
             const retroInput = document.getElementById('retroNumber');
+            
             if (isRetro) {
-                retroInput.classList.remove('hidden');
+                retroInputContainer.classList.remove('hidden');
+                retroInput.focus();
             } else {
-                retroInput.classList.add('hidden');
+                retroInputContainer.classList.add('hidden');
                 retroInput.value = '';
             }
         }
 
+        // Admin: อัปเดตเลขรัน
         function updateAdminPanelValues() {
             document.getElementById('nextBuy').value = counters['ซ'];
             document.getElementById('nextHire').value = counters['จ'];
@@ -140,7 +196,7 @@
             const newVal = parseInt(document.getElementById(inputId).value);
             if (newVal > 0) {
                 counters[type] = newVal;
-                alert(`อัปเดตเลขรัน ${type}. ถัดไปเป็น ${newVal} สำเร็จ`);
+                alert(`บันทึกสำเร็จ! เลขรันหมวด ${type}. ถัดไปจะเริ่มที่ ${newVal}`);
             }
         }
 
@@ -149,6 +205,7 @@
             return `${type}.${paddedNumber}/${year}`;
         }
 
+        // Core Logic: บันทึกและออกเลข
         function addProject() {
             const docType = document.getElementById('docType').value;
             const projectName = document.getElementById('projectName').value.trim();
@@ -156,46 +213,44 @@
             const isRetro = document.getElementById('isRetro').checked;
             const retroNumberStr = document.getElementById('retroNumber').value;
 
-            if (!projectName) return alert("กรุณาระบุชื่อโครงการ");
+            if (!projectName) {
+                alert("⚠️ กรุณาระบุชื่อโครงการ หรือรายละเอียดเอกสาร");
+                document.getElementById('projectName').focus();
+                return;
+            }
 
             let assignNumber = 0;
             let fullDocNumber = "";
 
             if (isRetro) {
-                // Logic แทรกเลขย้อนหลัง
-                if(!retroNumberStr) return alert("กรุณาระบุเลขที่ต้องการแทรก");
+                // Logic กรณีแทรกเลขย้อนหลัง
+                if(!retroNumberStr) return alert("⚠️ กรุณาระบุเลขที่ต้องการแทรกในช่องสีเหลือง");
                 assignNumber = parseInt(retroNumberStr);
                 
-                // 1. เช็คว่าเลขน้อยกว่าเลขปัจจุบันหรือไม่
                 if (assignNumber >= counters[docType]) {
-                    return alert(`ไม่สามารถแทรกได้ เนื่องจากเลขรันปัจจุบันอยู่ที่ ${counters[docType]} กรุณาใช้การรันเลขปกติ`);
+                    return alert(`❌ ไม่สามารถแทรกเลข ${assignNumber} ได้\nเนื่องจากต้องน้อยกว่าเลขรันปัจจุบันที่ระบบมาถึง (${counters[docType]})\nกรุณาปลดติ๊กถูกออกเพื่อรันเลขปกติ`);
                 }
 
                 fullDocNumber = formatDocNumber(docType, assignNumber);
 
-                // 2. เช็คว่ามีคนใช้เลขนี้ไปแล้วหรือยัง
                 const isDuplicate = records.some(r => r.docNumber === fullDocNumber);
                 if (isDuplicate) {
-                    return alert(`เลข ${fullDocNumber} มีการใช้งานไปแล้ว ไม่สามารถแทรกซ้ำได้`);
+                    return alert(`❌ เลขทะเบียน ${fullDocNumber} มีการใช้งานไปแล้วในระบบ ไม่สามารถออกซ้ำได้`);
                 }
             } else {
-                // Logic ปกติ รันเลขตาม Counter
-                assignNumber = counters[docType];
-                fullDocNumber = formatDocNumber(docType, assignNumber);
-                
-                // ตรวจสอบกันเหนียวว่าเลขที่จะรัน ไม่ซ้ำกับที่เคยแทรกย้อนหลังไปแล้ว
+                // Logic กรณีรันเลขปกติตามระบบ
+                // ตรวจสอบและหลบหลีกเลขที่เคยถูกแทรกไปแล้ว
                 while(records.some(r => r.docNumber === formatDocNumber(docType, counters[docType]))) {
-                    counters[docType]++; // ถ้าชนให้ขยับหนีอัตโนมัติ
+                    counters[docType]++; // ถ้าชนกับเลขเก่าที่คนแทรกไว้ ให้บวกเพิ่มหนีอัตโนมัติ
                 }
                 assignNumber = counters[docType];
                 fullDocNumber = formatDocNumber(docType, assignNumber);
                 
-                // เพิ่ม Counter ถัดไป
-                counters[docType]++;
-                updateAdminPanelValues();
+                counters[docType]++; // เตรียมเลขไว้สำหรับครั้งถัดไป
+                updateAdminPanelValues(); // อัปเดตหน้าจอ Admin
             }
 
-            // บันทึกข้อมูล
+            // นำข้อมูลเข้า Array
             const newRecord = {
                 id: Date.now(),
                 docNumber: fullDocNumber,
@@ -203,14 +258,14 @@
                 projectName: projectName,
                 date: docDate
             };
-
             records.push(newRecord);
             
-            // ล้างฟอร์ม
+            // ล้างฟอร์มเคลียร์หน้าจอ
             document.getElementById('projectName').value = '';
             document.getElementById('isRetro').checked = false;
             toggleRetro();
             
+            // ถ้าเป็น user ธรรมดา ให้เซ็ตวันที่กลับมาเป็นวันปัจจุบันเสมอ
             if (currentRole === 'user') {
                 document.getElementById('docDate').valueAsDate = new Date();
             }
@@ -218,20 +273,20 @@
             renderTable();
         }
 
-        // Admin Function: แก้ไขเลขทะเบียน
+        // Admin Function: แก้ไขเลขทะเบียนที่ออกไปแล้ว
         function editDocNumber(id) {
             const record = records.find(r => r.id === id);
             if(!record) return;
 
-            const newNum = prompt(`แก้ไขเลขทะเบียนของโครงการ:\n"${record.projectName}"\n\nโปรดระบุเลขทะเบียนใหม่เต็มรูปแบบ (เช่น ซ.005/2569):`, record.docNumber);
+            const newNum = prompt(`แก้ไขเลขทะเบียนของ:\n"${record.projectName}"\n\nรูปแบบที่ถูกต้องเช่น ซ.005/2569`, record.docNumber);
             
             if (newNum && newNum.trim() !== "") {
-                // เช็คว่ามีเลขนี้อยู่แล้วหรือไม่ (ยกเว้นตัวมันเอง)
-                const isDuplicate = records.some(r => r.docNumber === newNum.trim() && r.id !== id);
+                const formattedNum = newNum.trim();
+                const isDuplicate = records.some(r => r.docNumber === formattedNum && r.id !== id);
                 if(isDuplicate) {
-                    alert("ไม่สามารถเปลี่ยนได้ เนื่องจากเลขนี้มีอยู่ในระบบแล้ว");
+                    alert("❌ ไม่สามารถเปลี่ยนได้ เนื่องจากเลขทะเบียนนี้มีอยู่ในระบบแล้ว");
                 } else {
-                    record.docNumber = newNum.trim();
+                    record.docNumber = formattedNum;
                     renderTable();
                 }
             }
@@ -239,35 +294,59 @@
 
         function renderTable() {
             const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
             
-            // เรียงจากใหม่ไปเก่า
+            if (records.length === 0) return; // ปล่อยให้แสดงบรรทัด "ยังไม่มีข้อมูล" ตามค่าเริ่มต้น
+            
+            tbody.innerHTML = ''; // เคลียร์ตารางเดิม
+            
+            // เรียงจากข้อมูลใหม่ล่าสุด (id มากไปน้อย)
             const sortedRecords = [...records].reverse();
+
+            // จัดการแสดงผลคอลัมน์ Admin
+            const adminCols = document.querySelectorAll('.admin-only');
+            if (currentRole === 'admin') {
+                adminCols.forEach(el => el.classList.remove('hidden'));
+            }
 
             sortedRecords.forEach(record => {
                 const tr = document.createElement('tr');
-                tr.classList.add('hover:bg-gray-50');
+                tr.classList.add('hover:bg-blue-50', 'transition', 'duration-150');
                 
                 let adminActionHtml = '';
                 if(currentRole === 'admin') {
                     adminActionHtml = `
-                        <td class="border p-2 text-center">
-                            <button onclick="editDocNumber(${record.id})" class="text-blue-600 hover:text-blue-800 text-sm underline">
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                            <button onclick="editDocNumber(${record.id})" class="text-purple-600 hover:text-purple-900 bg-purple-100 hover:bg-purple-200 px-3 py-1 rounded transition">
                                 แก้ไขเลข
                             </button>
                         </td>
                     `;
                 }
 
+                const docTypeBadge = record.typeLabel === 'จัดซื้อ' 
+                    ? `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">จัดซื้อ</span>`
+                    : `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">จัดจ้าง</span>`;
+
                 tr.innerHTML = `
-                    <td class="border p-2 font-mono font-bold text-gray-700">${record.docNumber}</td>
-                    <td class="border p-2">${record.typeLabel}</td>
-                    <td class="border p-2">${record.projectName}</td>
-                    <td class="border p-2">${record.date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 font-mono">${record.docNumber}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${docTypeBadge}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">${record.projectName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.date}</td>
                     ${adminActionHtml}
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        // ระบบออกจากระบบ (Logout)
+        function logout() {
+            if(confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
+                sessionStorage.removeItem('userRole'); // ลบข้อมูลสิทธิ์
+                
+                // สั่ง Reload หน้าต่างของบราวเซอร์ 
+                // ซึ่งใน Apps Script การทำแบบนี้จะทำให้หน้าเว็บกลับไปรัน doGet() และโชว์หน้า Login ใหม่อีกครั้ง
+                window.top.location.reload(); 
+            }
         }
     </script>
 </body>
