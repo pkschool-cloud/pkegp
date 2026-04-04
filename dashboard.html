@@ -9,24 +9,26 @@
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
         
-        /* Glassmorphism แบบสว่างและคลีน */
+        /* สไตล์ Glassmorphism */
         .glass-sidebar { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-right: 1px solid rgba(226, 232, 240, 0.8); }
         .glass-panel { background: rgba(255, 255, 255, 0.95); box-shadow: 0 10px 40px -10px rgba(0,0,0,0.03); border: 1px solid rgba(241, 245, 249, 1); }
+        .glass-loader { background: rgba(248, 250, 252, 0.7); backdrop-filter: blur(12px); }
         
-        /* Animations ที่สมูทและเสถียรขึ้น (กระชับ ไม่ย้วย) */
+        /* แอนิเมชันที่สมูทขึ้นมาก */
         .fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        .slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
-        .modal-enter { animation: modalEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+        .modal-enter { animation: modalEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .fade-out { animation: fadeOut 0.3s ease-in forwards; }
         
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes modalEnter { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes modalEnter { from { opacity: 0; transform: scale(0.95) translateY(15px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         
-        /* ซ่อนเครื่องมือแอดมินจาก User ปกติ */
         .admin-only { display: none !important; }
         .admin-only-block { display: none !important; } 
         body[data-role="Admin"] .admin-only { display: flex !important; }
@@ -35,6 +37,20 @@
     <script>if (sessionStorage.getItem('isLoggedIn') !== 'true') { window.location.href = 'index.html'; }</script>
 </head>
 <body class="text-slate-800 h-screen overflow-hidden flex relative selection:bg-indigo-100 selection:text-indigo-900">
+
+    <div id="globalLoader" class="fixed inset-0 glass-loader z-[100] flex flex-col items-center justify-center transition-all duration-300">
+        <div class="bg-white rounded-[24px] p-8 shadow-2xl shadow-indigo-900/10 flex flex-col items-center transform transition-transform duration-300 scale-100" id="loaderCard">
+            <div class="relative w-16 h-16 mb-4">
+                <div class="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+                <div class="absolute inset-0 flex items-center justify-center text-indigo-600">
+                    <svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg>
+                </div>
+            </div>
+            <h3 class="text-xl font-extrabold text-slate-800 tracking-tight" id="loaderTitle">กำลังเตรียมข้อมูล</h3>
+            <p class="text-slate-500 font-medium text-sm mt-1" id="loaderText">กำลังโหลดข้อมูลอัปเดต กรุณารอสักครู่...</p>
+        </div>
+    </div>
 
     <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-100/60 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-pulse z-0"></div>
     <div class="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-100/60 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-pulse z-0" style="animation-delay: 2s;"></div>
@@ -53,11 +69,11 @@
         </div>
 
         <nav class="flex-1 p-5 space-y-2 overflow-y-auto font-medium">
-            <button onclick="switchTab('purchasing')" id="nav-purchasing" class="nav-btn w-full flex items-center px-4 py-3.5 bg-indigo-600 text-white rounded-xl shadow-md shadow-indigo-200 transition-all duration-200 active:scale-95">
+            <button onclick="handleTabSwitch('purchasing')" id="nav-purchasing" class="nav-btn w-full flex items-center px-4 py-3.5 bg-indigo-600 text-white rounded-xl shadow-md shadow-indigo-200 transition-all duration-200 active:scale-95">
                 <svg class="w-5 h-5 mr-3 opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                 ทะเบียนจัดซื้อ
             </button>
-            <button onclick="switchTab('hiring')" id="nav-hiring" class="nav-btn w-full flex items-center px-4 py-3.5 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 rounded-xl transition-all duration-200 active:scale-95">
+            <button onclick="handleTabSwitch('hiring')" id="nav-hiring" class="nav-btn w-full flex items-center px-4 py-3.5 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 rounded-xl transition-all duration-200 active:scale-95">
                 <svg class="w-5 h-5 mr-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                 ทะเบียนจัดจ้าง
             </button>
@@ -65,11 +81,11 @@
             <div class="admin-only pt-3 pb-2"><div class="w-full h-px bg-slate-200"></div></div>
             <div class="admin-only px-4 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest">ส่วนของแอดมิน</div>
 
-            <button onclick="switchTab('managedata')" id="nav-managedata" class="nav-btn admin-only w-full flex items-center px-4 py-3.5 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 rounded-xl transition-all duration-200 active:scale-95">
+            <button onclick="handleTabSwitch('managedata')" id="nav-managedata" class="nav-btn admin-only w-full flex items-center px-4 py-3.5 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 rounded-xl transition-all duration-200 active:scale-95">
                 <svg class="w-5 h-5 mr-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
                 จัดการข้อมูล
             </button>
-            <button onclick="switchTab('permissions')" id="nav-permissions" class="nav-btn admin-only w-full flex items-center px-4 py-3.5 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 rounded-xl transition-all duration-200 active:scale-95">
+            <button onclick="handleTabSwitch('permissions')" id="nav-permissions" class="nav-btn admin-only w-full flex items-center px-4 py-3.5 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 rounded-xl transition-all duration-200 active:scale-95">
                 <svg class="w-5 h-5 mr-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                 กำหนดสิทธิ์
             </button>
@@ -98,7 +114,7 @@
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         
-        <div id="tab-data" class="flex-1 overflow-y-auto p-6 md:p-10 fade-in">
+        <div id="tab-data" class="flex-1 overflow-y-auto p-6 md:p-10 fade-in hidden">
             <div class="max-w-7xl mx-auto">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 slide-up">
                     <div>
@@ -106,16 +122,16 @@
                         <p class="text-slate-500 text-sm mt-1.5 font-medium">จัดการรายการเอกสาร รันเลขระบบ และอัปเดตสถานะการรับเข้า</p>
                     </div>
                     <div class="flex gap-3 items-center">
-                        <div class="bg-white border border-slate-200 rounded-xl shadow-sm px-2 flex items-center">
+                        <div class="bg-white border border-slate-200 rounded-xl shadow-sm px-2 flex items-center hover:border-indigo-300 transition-colors">
                             <svg class="w-4 h-4 text-slate-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
-                            <select id="sortSelect" onchange="renderTable()" class="bg-transparent text-slate-700 text-sm font-semibold focus:outline-none focus:ring-0 cursor-pointer pl-2 pr-6 py-2.5">
+                            <select id="sortSelect" onchange="renderTable()" class="bg-transparent text-slate-700 text-sm font-bold focus:outline-none focus:ring-0 cursor-pointer pl-2 pr-6 py-2.5">
                                 <option value="desc">ล่าสุด - เก่าสุด</option>
                                 <option value="asc">เก่าสุด - ล่าสุด</option>
                             </select>
                         </div>
-                        <button onclick="generateNewNumber()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-md shadow-indigo-200 transition-all duration-200 flex items-center active:scale-95">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                            สร้างเลขใหม่
+                        <button onclick="generateNewNumber(this)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-md shadow-indigo-200 transition-all duration-200 flex items-center active:scale-95 group">
+                            <svg class="w-5 h-5 mr-2 transform group-active:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            <span>สร้างเลขใหม่</span>
                         </button>
                     </div>
                 </div>
@@ -148,10 +164,10 @@
                 </div>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 slide-up" style="animation-delay: 0.1s;">
-                    <div class="glass-panel rounded-3xl p-8 relative overflow-hidden">
+                    <div class="glass-panel rounded-3xl p-8 relative overflow-hidden group hover:border-blue-200 transition-colors">
                         <div class="absolute top-0 left-0 w-full h-1.5 bg-blue-500"></div>
                         <div class="flex items-center mb-6">
-                            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mr-4 border border-blue-100">
+                            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mr-4 border border-blue-100 group-hover:scale-110 transition-transform">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             </div>
                             <div>
@@ -179,16 +195,16 @@
                                 <label class="block text-sm font-bold text-slate-700 mb-1.5">ชื่อโครงการ (ให้ User ไปกรอกเองได้)</label>
                                 <input type="text" id="bdName" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none" placeholder="ระบุชื่อโครงการ">
                             </div>
-                            <button onclick="addBackdatedProject()" id="btnBackdate" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-md shadow-blue-600/20 transition-all duration-200 active:scale-95">
-                                สร้างและมอบหมายงาน
+                            <button onclick="addBackdatedProject(this)" id="btnBackdate" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-md shadow-blue-600/20 transition-all duration-200 active:scale-95 flex justify-center items-center">
+                                <span>สร้างและมอบหมายงาน</span>
                             </button>
                         </div>
                     </div>
 
-                    <div class="glass-panel rounded-3xl p-8 relative overflow-hidden">
+                    <div class="glass-panel rounded-3xl p-8 relative overflow-hidden group hover:border-amber-200 transition-colors">
                         <div class="absolute top-0 left-0 w-full h-1.5 bg-amber-500"></div>
                         <div class="flex items-center mb-6">
-                            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mr-4 border border-amber-100">
+                            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mr-4 border border-amber-100 group-hover:scale-110 transition-transform">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
                             </div>
                             <div>
@@ -215,8 +231,8 @@
                                 <label class="block text-xs font-bold text-amber-800 mb-2 uppercase tracking-wide">ให้สิทธิ์ผู้ใช้แก้ไข (Owner)</label>
                                 <select id="shiftCreator" class="w-full px-4 py-2.5 bg-white border border-amber-200 rounded-lg text-sm focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium outline-none"></select>
                             </div>
-                            <button onclick="shiftNumber()" id="btnShift" class="w-full mt-6 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-md shadow-amber-500/20 transition-all duration-200 active:scale-95">
-                                ทำการจองและมอบสิทธิ์
+                            <button onclick="shiftNumber(this)" id="btnShift" class="w-full mt-6 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-md shadow-amber-500/20 transition-all duration-200 active:scale-95 flex justify-center items-center">
+                                <span>ทำการจองและมอบสิทธิ์</span>
                             </button>
                         </div>
                     </div>
@@ -286,7 +302,9 @@
             </div>
             <div class="px-8 py-5 bg-slate-50/80 border-t border-slate-100 flex justify-end gap-3 rounded-b-[28px]">
                 <button onclick="document.getElementById('editModal').classList.add('hidden')" class="px-6 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-xl transition-all active:scale-95">ยกเลิก</button>
-                <button onclick="saveEdit()" class="px-8 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md shadow-indigo-200 transition-all active:scale-95">บันทึกข้อมูล</button>
+                <button onclick="saveEdit(this)" class="px-8 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md shadow-indigo-200 transition-all active:scale-95 flex items-center justify-center min-w-[120px]">
+                    <span>บันทึกข้อมูล</span>
+                </button>
             </div>
         </div>
     </div>
@@ -312,7 +330,9 @@
                 </div>
             </div>
             <div class="px-6 py-5 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-                <button onclick="changePassword()" id="btnChangePwd" class="px-6 py-3 text-sm font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-xl shadow-md transition-all w-full active:scale-95">บันทึกรหัสผ่านใหม่</button>
+                <button onclick="changePassword(this)" class="px-6 py-3 text-sm font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-xl shadow-md transition-all w-full active:scale-95 flex justify-center items-center">
+                    <span>บันทึกรหัสผ่านใหม่</span>
+                </button>
             </div>
         </div>
     </div>
@@ -332,7 +352,9 @@
                 <select id="newRole" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium outline-none"><option value="User">ผู้ใช้งานทั่วไป (User)</option><option value="Admin">ผู้ดูแลระบบ (Admin)</option></select></div>
             </div>
             <div class="px-6 py-5 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-                <button onclick="addUser()" class="px-6 py-3 text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-xl shadow-md transition-all w-full active:scale-95">สร้างบัญชี</button>
+                <button onclick="addUser(this)" class="px-6 py-3 text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-xl shadow-md transition-all w-full active:scale-95 flex justify-center items-center">
+                    <span>สร้างบัญชี</span>
+                </button>
             </div>
         </div>
     </div>
@@ -353,21 +375,46 @@
         document.getElementById('userInitial').textContent = username.charAt(0).toUpperCase();
         document.body.setAttribute('data-role', role);
 
+        // ไอคอนโหลดหมุนๆ สำหรับปุ่ม
+        const spinnerIcon = `<svg class="animate-spin h-5 w-5 mr-2 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
+        // ฟังก์ชันควบคุม Global Loader
+        function showGlobalLoader(title, text) {
+            const loader = document.getElementById('globalLoader');
+            document.getElementById('loaderTitle').textContent = title;
+            document.getElementById('loaderText').textContent = text;
+            loader.classList.remove('hidden');
+            setTimeout(() => loader.classList.remove('opacity-0'), 10);
+        }
+
+        function hideGlobalLoader() {
+            const loader = document.getElementById('globalLoader');
+            loader.classList.add('opacity-0');
+            setTimeout(() => loader.classList.add('hidden'), 300);
+        }
+
         async function fetchInitialData() {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = `<tr><td colspan="5" class="px-8 py-16 text-center text-indigo-500 font-bold"><svg class="animate-spin h-6 w-6 mx-auto mb-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>กำลังเชื่อมต่อข้อมูลแบบ Real-time...</td></tr>`;
+            showGlobalLoader('กำลังเตรียมข้อมูล', 'กำลังโหลดข้อมูลอัปเดต กรุณารอสักครู่...');
             try {
                 const res = await fetch(API_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: 'getData' }) });
                 const result = await res.json();
                 if(result.status === 'success') { 
                     db = result.data; 
                     renderUserDropdowns(); 
+                    document.getElementById('tab-data').classList.remove('hidden'); // โชว์หน้าแรก
                     renderTable(); 
                     renderUsers(); 
-                } 
-                else { tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-10 font-medium">${result.message}</td></tr>`; }
-            } catch (e) { tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-10 font-medium">ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้</td></tr>`; }
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + result.message);
+                }
+            } catch (e) { 
+                alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองรีเฟรชหน้าเว็บอีกครั้ง');
+            } finally {
+                hideGlobalLoader();
+            }
         }
+        
+        // เริ่มโหลดข้อมูลเมื่อเปิดหน้า
         fetchInitialData();
 
         function renderUserDropdowns() {
@@ -380,8 +427,17 @@
             document.getElementById('shiftCreator').value = username;
         }
 
+        function handleTabSwitch(tab) {
+            showGlobalLoader('กำลังจัดเตรียมหน้าต่าง', 'ระบบกำลังโหลดการอัปเดต กรุณารอสักครู่...');
+            
+            // หน่วงเวลาเล็กน้อยให้สมูท
+            setTimeout(() => {
+                switchTab(tab);
+                hideGlobalLoader();
+            }, 400);
+        }
+
         function switchTab(tab) {
-            // คลาสสำหรับสถานะปกติและสถานะทำงานของเมนู
             const activeClasses = ['bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-200'];
             const inactiveClasses = ['text-slate-600', 'hover:bg-indigo-50', 'hover:text-indigo-700'];
 
@@ -393,8 +449,8 @@
                     btn.querySelector('svg').classList.add('opacity-70');
                 }
             });
-            const activeBtn = document.getElementById(`nav-${tab}`);
             
+            const activeBtn = document.getElementById(`nav-${tab}`);
             document.getElementById('tab-data').classList.add('hidden');
             document.getElementById('tab-permissions').classList.add('hidden');
             document.getElementById('tab-managedata').classList.add('hidden');
@@ -433,15 +489,15 @@
             data.forEach((item, index) => {
                 const isPending = !item.name;
                 const statusHtml = item.isReceived 
-                    ? `<span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>รับแล้ว</span>`
-                    : `<span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-700"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5 animate-pulse"></span>รอรับเข้า</span>`;
+                    ? `<span class="inline-flex items-center px-3 py-1 rounded-lg text-[11px] font-extrabold bg-emerald-100 text-emerald-700 uppercase tracking-wide"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>รับแล้ว</span>`
+                    : `<span class="inline-flex items-center px-3 py-1 rounded-lg text-[11px] font-extrabold bg-amber-100 text-amber-700 uppercase tracking-wide"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5 animate-pulse"></span>รอรับเข้า</span>`;
 
                 const isOwner = item.creator === username;
                 const canEdit = role === 'Admin' || (!item.isReceived && isOwner);
                 
                 let actionHtml = `<div class="flex justify-center gap-2">`;
                 if (canEdit) actionHtml += `<button onclick="openModal(${item.id})" class="text-indigo-600 hover:text-white hover:bg-indigo-500 bg-indigo-50 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95">แก้ไข</button>`;
-                if (role === 'Admin') actionHtml += `<button onclick="deleteItem(${item.id})" class="text-red-500 hover:text-white hover:bg-red-500 bg-red-50 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95">ลบ</button>`;
+                if (role === 'Admin') actionHtml += `<button onclick="deleteItem(${item.id}, this)" class="text-red-500 hover:text-white hover:bg-red-500 bg-red-50 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95">ลบ</button>`;
                 if (!canEdit && role !== 'Admin') actionHtml += `<span class="text-xs text-slate-400 py-2 font-bold bg-slate-50 px-4 rounded-xl border border-slate-100">ถูกล็อค</span>`;
                 actionHtml += `</div>`;
 
@@ -457,51 +513,40 @@
             });
         }
 
-        async function addBackdatedProject() {
+        async function addBackdatedProject(btn) {
             const type = document.getElementById('bdType').value;
             const docNum = document.getElementById('bdDocNum').value.trim();
             const name = document.getElementById('bdName').value.trim();
-            const btn = document.getElementById('btnBackdate');
             const assignTo = document.getElementById('bdCreator').value;
 
             if(!docNum) return alert('กรุณาระบุเลขที่เอกสาร');
+            if(db[type].some(item => item.docNum === docNum)) return alert(`⚠️ เลข "${docNum}" ถูกใช้งานไปแล้วในระบบ`);
 
-            const isDuplicate = db[type].some(item => item.docNum === docNum);
-            if(isDuplicate) return alert(`⚠️ ไม่สามารถเพิ่มได้ เนื่องจากเลข "${docNum}" ถูกใช้งานไปแล้วในระบบ`);
-
-            btn.disabled = true; btn.innerHTML = 'กำลังสร้างเอกสาร...';
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true; 
+            btn.innerHTML = `${spinnerIcon} กำลังบันทึกข้อมูล...`;
 
             const isRecv = name !== ''; 
             const newRecord = {
-                id: Date.now(),
-                docNum: docNum,
-                name: name,
-                date: isRecv ? (document.getElementById('bdDate').value || "-") : "-",
-                creator: assignTo,
-                isReceived: isRecv
+                id: Date.now(), docNum: docNum, name: name, date: isRecv ? (document.getElementById('bdDate').value || "-") : "-", creator: assignTo, isReceived: isRecv
             };
 
             try {
-                const res = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify({ action: 'createDoc', type: type, ...newRecord })
-                });
+                const res = await fetch(API_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: 'createDoc', type: type, ...newRecord }) });
                 if((await res.json()).status === 'success') {
                     db[type].push(newRecord);
-                    alert(`สร้างเอกสารและมอบหมายให้ ${assignTo} สำเร็จ!`);
+                    alert(`สร้างเอกสารสำเร็จ!`);
                     document.getElementById('bdDocNum').value = ''; document.getElementById('bdName').value = '';
                     if(currentTab === type) renderTable();
                 }
             } catch(e) {}
-            btn.disabled = false; btn.innerHTML = 'สร้างและมอบหมายงาน';
+            btn.disabled = false; btn.innerHTML = originalHtml;
         }
 
-        async function shiftNumber() {
+        async function shiftNumber(btn) {
             const type = document.getElementById('shiftType').value;
             const targetNum = parseInt(document.getElementById('shiftNum').value);
             const assignTo = document.getElementById('shiftCreator').value;
-            const btn = document.getElementById('btnShift');
 
             if(!targetNum || targetNum <= 0) return alert('กรุณาระบุตัวเลขที่ถูกต้อง');
 
@@ -511,25 +556,22 @@
 
             if(db[type].some(item => item.docNum === newDocNum)) return alert(`⚠️ ไม่สามารถจองได้ เนื่องจากเลข "${newDocNum}" มีในระบบแล้ว`);
 
-            btn.disabled = true; btn.innerHTML = 'กำลังจองเลข...';
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true; 
+            btn.innerHTML = `${spinnerIcon} กำลังจองเลข...`;
 
-            const newRecord = {
-                id: Date.now(), docNum: newDocNum, name: "", date: "-", creator: assignTo, isReceived: false
-            };
+            const newRecord = { id: Date.now(), docNum: newDocNum, name: "", date: "-", creator: assignTo, isReceived: false };
 
             try {
-                const res = await fetch(API_URL, {
-                    method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify({ action: 'createDoc', type: type, ...newRecord })
-                });
+                const res = await fetch(API_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: 'createDoc', type: type, ...newRecord }) });
                 if((await res.json()).status === 'success') {
                     db[type].push(newRecord);
-                    alert(`จองคิวเลข ${newDocNum} และมอบหมายให้ ${assignTo} สำเร็จ!`);
+                    alert(`จองคิวเลข ${newDocNum} สำเร็จ!`);
                     document.getElementById('shiftNum').value = '';
                     if(currentTab === type) renderTable();
                 }
             } catch(e) {}
-            btn.disabled = false; btn.innerHTML = 'ทำการจองและมอบสิทธิ์';
+            btn.disabled = false; btn.innerHTML = originalHtml;
         }
 
         function renderUsers() {
@@ -543,7 +585,7 @@
                     <h3 class="mt-5 text-xl font-extrabold text-slate-800 tracking-tight">${u.username}</h3>
                     <div class="mt-5 pt-5 border-t border-slate-100">
                         <label class="block text-[11px] font-bold text-slate-400 mb-2 uppercase tracking-widest">ปรับระดับสิทธิ์</label>
-                        <select onchange="updateRole('${u.username}', this.value)" ${u.username === username ? 'disabled' : ''} class="text-sm font-bold w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all cursor-pointer outline-none">
+                        <select onchange="updateRole('${u.username}', this)" ${u.username === username ? 'disabled' : ''} class="text-sm font-bold w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all cursor-pointer outline-none">
                             <option value="User" ${u.role==='User'?'selected':''}>สิทธิ์ทั่วไป (User)</option>
                             <option value="Admin" ${u.role==='Admin'?'selected':''}>ผู้ดูแลระบบ (Admin)</option>
                         </select>
@@ -574,9 +616,10 @@
             document.getElementById('editModal').classList.remove('hidden');
         }
 
-        async function saveEdit() {
-            const btn = event.target;
-            btn.innerHTML = `<svg class="animate-spin h-5 w-5 mr-2 inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> บันทึก...`;
+        async function saveEdit(btn) {
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true; 
+            btn.innerHTML = `${spinnerIcon} กำลังบันทึก...`;
             
             const id = document.getElementById('editId').value;
             const newName = document.getElementById('editProjectName').value.trim();
@@ -621,10 +664,14 @@
                 }
             } catch (e) { alert("เกิดข้อผิดพลาดในการบันทึก"); }
             
-            btn.innerHTML = 'บันทึกข้อมูล';
+            btn.disabled = false; btn.innerHTML = originalHtml;
         }
 
-        async function generateNewNumber() {
+        async function generateNewNumber(btn) {
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true; 
+            btn.innerHTML = `${spinnerIcon} กำลังสร้าง...`;
+
             const dataList = db[currentTab];
             let nextNum = dataList.length > 0 ? Math.max(...dataList.map(item => parseInt(item.docNum.split('/')[0].substring(2)) || 0)) + 1 : 1;
             const newDocNum = `${currentTab === 'purchasing' ? 'ซ.' : 'จ.'}${nextNum.toString().padStart(3, '0')}/${currentYear}`;
@@ -634,25 +681,43 @@
                 const res = await fetch(API_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: 'createDoc', type: currentTab, ...newRecord }) });
                 if((await res.json()).status === 'success') { db[currentTab].push(newRecord); document.getElementById('sortSelect').value = 'desc'; renderTable(); }
             } catch(e) {}
+
+            btn.disabled = false; btn.innerHTML = originalHtml;
         }
 
-        async function deleteItem(id) {
+        async function deleteItem(id, btn) {
             if(confirm('ระบบจะลบออกจากฐานข้อมูลถาวร ยืนยันหรือไม่?')) {
+                const originalHtml = btn.innerHTML;
+                btn.disabled = true; 
+                btn.innerHTML = `<svg class="animate-spin h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
                 const res = await fetch(API_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: 'deleteDoc', type: currentTab, id: id }) });
                 if((await res.json()).status === 'success') { db[currentTab] = db[currentTab].filter(d => d.id !== id); renderTable(); }
             }
         }
 
-        async function updateRole(targetUser, newRole) {
-            const res = await fetch(API_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: 'updateRole', targetUser, newRole }) });
-            if((await res.json()).status === 'success') { alert('อัปเดตสิทธิ์สำเร็จ'); const userIdx = db.users.findIndex(u => u.username === targetUser); if(userIdx > -1) db.users[userIdx].role = newRole; renderUsers(); }
+        async function updateRole(targetUser, selectEl) {
+            selectEl.disabled = true;
+            const res = await fetch(API_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: 'updateRole', targetUser, newRole: selectEl.value }) });
+            if((await res.json()).status === 'success') { 
+                const userIdx = db.users.findIndex(u => u.username === targetUser); 
+                if(userIdx > -1) db.users[userIdx].role = selectEl.value; 
+                renderUsers(); 
+            }
+            selectEl.disabled = false;
         }
 
-        async function addUser() {
+        async function addUser(btn) {
             const user = document.getElementById('newUsername').value.trim();
             const pass = document.getElementById('newPassword').value.trim();
             const r = document.getElementById('newRole').value;
+            
             if(!user || !pass) return alert('กรอกข้อมูลให้ครบถ้วน');
+
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true; 
+            btn.innerHTML = `${spinnerIcon} กำลังสร้าง...`;
+
             const res = await fetch(API_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: 'addUser', newUsername: user, newPassword: pass, newRole: r }) });
             const result = await res.json();
             if(result.status === 'success') {
@@ -661,23 +726,25 @@
                 document.getElementById('addUserModal').classList.add('hidden');
                 document.getElementById('newUsername').value = ''; document.getElementById('newPassword').value = '';
             } else { alert(result.message); }
+
+            btn.disabled = false; btn.innerHTML = originalHtml;
         }
 
-        async function changePassword() {
+        async function changePassword(btn) {
             const oldP = document.getElementById('oldPwd').value;
             const newP = document.getElementById('newPwd').value;
             const confP = document.getElementById('confirmNewPwd').value;
-            const btn = document.getElementById('btnChangePwd');
 
             if(!oldP || !newP || !confP) return alert('กรุณากรอกข้อมูลให้ครบทุกช่อง');
             if(newP !== confP) return alert('รหัสผ่านใหม่ไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง!');
 
-            btn.disabled = true; btn.innerHTML = 'กำลังบันทึกรหัสผ่านใหม่...';
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true; 
+            btn.innerHTML = `${spinnerIcon} กำลังบันทึก...`;
 
             try {
                 const res = await fetch(API_URL, { 
-                    method: 'POST', 
-                    headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+                    method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, 
                     body: JSON.stringify({ action: 'changePassword', username: username, oldPassword: oldP, newPassword: newP }) 
                 });
                 const result = await res.json();
@@ -690,7 +757,7 @@
             } catch(e) {
                 alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
             }
-            btn.disabled = false; btn.innerHTML = 'บันทึกรหัสผ่านใหม่';
+            btn.disabled = false; btn.innerHTML = originalHtml;
         }
 
         function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
