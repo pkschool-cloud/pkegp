@@ -6,6 +6,8 @@
     <title>Dashboard | ระบบทะเบียนคุม จัดซื้อ-จัดจ้าง</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
         
@@ -14,7 +16,7 @@
         .glass-panel { background: rgba(255, 255, 255, 0.95); box-shadow: 0 10px 40px -10px rgba(0,0,0,0.03); border: 1px solid rgba(241, 245, 249, 1); }
         .glass-loader { background: rgba(248, 250, 252, 0.7); backdrop-filter: blur(12px); }
         
-        /* แอนิเมชันที่สมูทขึ้นมาก */
+        /* แอนิเมชันที่สมูทขึ้น */
         .fade-in { animation: fadeIn 0.4s ease-out forwards; }
         .slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
         .modal-enter { animation: modalEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -24,6 +26,7 @@
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes modalEnter { from { opacity: 0; transform: scale(0.95) translateY(15px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px) rotate(-2deg); } 75% { transform: translateX(5px) rotate(2deg); } }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -34,11 +37,40 @@
         body[data-role="Admin"] .admin-only { display: flex !important; }
         body[data-role="Admin"] .admin-only-block { display: block !important; }
     </style>
-    <script>if (sessionStorage.getItem('isLoggedIn') !== 'true') { window.location.href = 'index.html'; }</script>
 </head>
 <body class="text-slate-800 h-screen overflow-hidden flex relative selection:bg-indigo-100 selection:text-indigo-900">
 
-    <div id="globalLoader" class="fixed inset-0 glass-loader z-[100] flex flex-col items-center justify-center transition-all duration-300">
+    <div id="quickLoginOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[9999] flex items-center justify-center transition-opacity duration-300">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl max-w-sm w-full p-10 text-center relative overflow-hidden border border-white/20">
+            <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-600 shadow-inner">
+                <i class="fa-solid fa-lock text-3xl"></i>
+            </div>
+            <h2 class="text-3xl font-black text-slate-800 mb-2 tracking-tight">เข้าสู่ระบบ</h2>
+            <p class="text-slate-500 font-medium mb-8">ระบบทะเบียนคุม จัดซื้อ-จัดจ้าง</p>
+            
+            <input type="password" id="pinInput" autofocus autocomplete="off"
+                class="w-full text-center px-6 py-4 text-2xl font-black bg-slate-50 border-2 border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all text-slate-800 placeholder:text-slate-300 tracking-[0.2em] shadow-inner mb-2"
+                placeholder="••••••">
+            
+            <p id="loginErrorMsg" class="text-rose-500 text-sm font-bold mb-6 opacity-0 transition-opacity h-5 flex justify-center items-center">
+                <i class="fa-solid fa-circle-exclamation mr-1"></i> รบกวนคุณครูกรอกรหัสให้ถูกต้อง
+            </p>
+            
+            <button id="loginBtn" onclick="handleQuickLogin()" class="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold text-lg py-4 rounded-2xl shadow-lg shadow-indigo-500/30 transition-transform hover:-translate-y-1 flex justify-center items-center mb-4">
+                ยืนยันการเข้าใช้งาน
+            </button>
+            
+            <button onclick="goToMainMenu()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3.5 rounded-2xl transition-colors flex justify-center items-center">
+                <i class="fa-solid fa-house mr-2 text-slate-500"></i> กลับสู่เมนูหลัก
+            </button>
+        </div>
+    </div>
+
+    <button onclick="goToMainMenu()" class="fixed top-6 right-8 bg-white/80 backdrop-blur-md border border-slate-200 hover:bg-white hover:border-indigo-300 text-slate-700 font-bold py-2.5 px-5 rounded-xl shadow-sm transition-all z-40 flex items-center group">
+        <i class="fa-solid fa-house mr-2 text-indigo-500 group-hover:-translate-y-0.5 transition-transform"></i> กลับหน้าหลัก
+    </button>
+
+    <div id="globalLoader" class="fixed inset-0 glass-loader z-[100] flex flex-col items-center justify-center transition-all duration-300 hidden opacity-0">
         <div class="bg-white rounded-[24px] p-8 shadow-2xl shadow-indigo-900/10 flex flex-col items-center transform transition-transform duration-300 scale-100" id="loaderCard">
             <div class="relative w-16 h-16 mb-4">
                 <div class="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
@@ -257,6 +289,64 @@
         </div>
     </main>
 
+    <div id="changePwdModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[28px] shadow-2xl w-full max-w-sm overflow-hidden modal-enter border border-white/50">
+            <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-extrabold text-slate-800">เปลี่ยนรหัสผ่าน</h3>
+                <button onclick="document.getElementById('changePwdModal').classList.add('hidden')" class="text-slate-400 hover:text-red-500 transition-colors p-1.5 bg-white rounded-full hover:bg-red-50 active:scale-90 border border-transparent hover:border-red-100"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1.5">รหัสผ่านเดิม</label>
+                    <input type="password" id="oldPwd" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none font-medium text-center" placeholder="รหัสผ่านปัจจุบันของคุณ">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1.5">รหัสผ่านใหม่ (4-6 ตัว)</label>
+                    <input type="password" id="newPwd" maxlength="6" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none font-medium text-center" placeholder="ตั้งรหัสผ่านใหม่">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1.5">ยืนยันรหัสผ่านใหม่</label>
+                    <input type="password" id="confirmNewPwd" maxlength="6" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none font-medium text-center" placeholder="กรอกรหัสผ่านใหม่อีกครั้ง">
+                </div>
+                
+                <div class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-left">
+                    <p class="text-[11px] text-amber-800 font-medium leading-relaxed">
+                        <i class="fa-solid fa-circle-info text-amber-500 mr-1"></i> 
+                        <span class="font-bold">คำแนะนำ:</span> กรุณาตั้งรหัสผ่านความยาว 4-6 ตัวอักษรหรือตัวเลข<br><br>
+                        <span class="font-bold text-rose-600">ข้อควรระวัง:</span> รหัสผ่านนี้ผู้ดูแลระบบสามารถมองเห็นได้เพื่อใช้ในการจัดการฐานข้อมูล <b>โปรดหลีกเลี่ยงการใช้รหัสผ่านที่เกี่ยวข้องกับการทำธุรกรรมการเงินหรือความลับส่วนตัวอื่นๆ</b>
+                    </p>
+                </div>
+            </div>
+            <div class="px-6 py-5 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                <button onclick="changePassword(this)" class="px-6 py-3 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md shadow-indigo-500/20 transition-all w-full active:scale-95 flex justify-center items-center">
+                    <span>บันทึกรหัสผ่านใหม่</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="addUserModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[28px] shadow-2xl w-full max-w-sm overflow-hidden modal-enter border border-white/50">
+            <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-purple-50/50">
+                <h3 class="text-lg font-extrabold text-purple-900">เพิ่มผู้ใช้ใหม่</h3>
+                <button onclick="document.getElementById('addUserModal').classList.add('hidden')" class="text-slate-400 hover:text-red-500 transition-colors p-1.5 bg-white rounded-full hover:bg-red-50 active:scale-90 border border-transparent hover:border-red-100"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div><label class="block text-sm font-bold text-slate-700 mb-1.5">Username</label>
+                <input type="text" id="newUsername" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium outline-none" placeholder="ตั้งชื่อผู้ใช้งาน"></div>
+                <div><label class="block text-sm font-bold text-slate-700 mb-1.5">Password</label>
+                <input type="text" id="newPassword" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium outline-none" placeholder="ตั้งรหัสผ่าน"></div>
+                <div><label class="block text-sm font-bold text-slate-700 mb-1.5">ระดับสิทธิ์</label>
+                <select id="newRole" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium outline-none"><option value="User">ผู้ใช้งานทั่วไป (User)</option><option value="Admin">ผู้ดูแลระบบ (Admin)</option></select></div>
+            </div>
+            <div class="px-6 py-5 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                <button onclick="addUser(this)" class="px-6 py-3 text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-xl shadow-md transition-all w-full active:scale-95 flex justify-center items-center">
+                    <span>สร้างบัญชี</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="editModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-[28px] shadow-2xl w-full max-w-lg overflow-hidden modal-enter border border-white/50">
             <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -309,56 +399,6 @@
         </div>
     </div>
 
-    <div id="changePwdModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-[28px] shadow-2xl w-full max-w-sm overflow-hidden modal-enter border border-white/50">
-            <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="text-lg font-extrabold text-slate-800">เปลี่ยนรหัสผ่าน</h3>
-                <button onclick="document.getElementById('changePwdModal').classList.add('hidden')" class="text-slate-400 hover:text-red-500 transition-colors p-1.5 bg-white rounded-full hover:bg-red-50 active:scale-90 border border-transparent hover:border-red-100"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-            </div>
-            <div class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-1.5">รหัสผ่านเดิม</label>
-                    <input type="password" id="oldPwd" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-slate-500/20 focus:border-slate-500 transition-all outline-none font-medium" placeholder="รหัสผ่านปัจจุบันของคุณ">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-1.5">รหัสผ่านใหม่</label>
-                    <input type="password" id="newPwd" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-slate-500/20 focus:border-slate-500 transition-all outline-none font-medium" placeholder="ตั้งรหัสผ่านใหม่">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-1.5">ยืนยันรหัสผ่านใหม่</label>
-                    <input type="password" id="confirmNewPwd" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-slate-500/20 focus:border-slate-500 transition-all outline-none font-medium" placeholder="กรอกรหัสผ่านใหม่อีกครั้ง">
-                </div>
-            </div>
-            <div class="px-6 py-5 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-                <button onclick="changePassword(this)" class="px-6 py-3 text-sm font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-xl shadow-md transition-all w-full active:scale-95 flex justify-center items-center">
-                    <span>บันทึกรหัสผ่านใหม่</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div id="addUserModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-[28px] shadow-2xl w-full max-w-sm overflow-hidden modal-enter border border-white/50">
-            <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-purple-50/50">
-                <h3 class="text-lg font-extrabold text-purple-900">เพิ่มผู้ใช้ใหม่</h3>
-                <button onclick="document.getElementById('addUserModal').classList.add('hidden')" class="text-slate-400 hover:text-red-500 transition-colors p-1.5 bg-white rounded-full hover:bg-red-50 active:scale-90 border border-transparent hover:border-red-100"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-            </div>
-            <div class="p-6 space-y-4">
-                <div><label class="block text-sm font-bold text-slate-700 mb-1.5">Username</label>
-                <input type="text" id="newUsername" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium outline-none" placeholder="ตั้งชื่อผู้ใช้งาน"></div>
-                <div><label class="block text-sm font-bold text-slate-700 mb-1.5">Password</label>
-                <input type="text" id="newPassword" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium outline-none" placeholder="ตั้งรหัสผ่าน"></div>
-                <div><label class="block text-sm font-bold text-slate-700 mb-1.5">ระดับสิทธิ์</label>
-                <select id="newRole" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-medium outline-none"><option value="User">ผู้ใช้งานทั่วไป (User)</option><option value="Admin">ผู้ดูแลระบบ (Admin)</option></select></div>
-            </div>
-            <div class="px-6 py-5 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-                <button onclick="addUser(this)" class="px-6 py-3 text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-xl shadow-md transition-all w-full active:scale-95 flex justify-center items-center">
-                    <span>สร้างบัญชี</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycby8X-ixaIZgOc18NOcrWisRd2l5wpm-tLAJcwu4o6Q5HPtLrHUoGc0AI-L6ftrtjiMAig/exec";
         
@@ -366,19 +406,12 @@
         const currentYear = "2569";
         let db = { purchasing: [], hiring: [], users: [] };
 
-        const username = sessionStorage.getItem('username') || 'Guest';
-        const rawRole = sessionStorage.getItem('userRole') || 'User';
-        const role = rawRole.toLowerCase() === 'admin' ? 'Admin' : 'User';
-        
-        document.getElementById('displayUser').textContent = username;
-        document.getElementById('displayRole').textContent = role;
-        document.getElementById('userInitial').textContent = username.charAt(0).toUpperCase();
-        document.body.setAttribute('data-role', role);
+        let username = 'Guest';
+        let rawRole = 'User';
+        let role = 'User';
 
-        // ไอคอนโหลดหมุนๆ สำหรับปุ่ม
         const spinnerIcon = `<svg class="animate-spin h-5 w-5 mr-2 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
 
-        // ฟังก์ชันควบคุม Global Loader
         function showGlobalLoader(title, text) {
             const loader = document.getElementById('globalLoader');
             document.getElementById('loaderTitle').textContent = title;
@@ -393,6 +426,89 @@
             setTimeout(() => loader.classList.add('hidden'), 300);
         }
 
+        // ==========================================
+        // 0. ระบบ Login
+        // ==========================================
+        window.onload = () => {
+            document.getElementById('pinInput').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') handleQuickLogin();
+            });
+
+            if (sessionStorage.getItem('isLoggedIn') === 'true') {
+                document.getElementById('quickLoginOverlay').classList.add('hidden');
+                initializeDashboard();
+            } else {
+                document.getElementById('quickLoginOverlay').classList.remove('hidden');
+                document.getElementById('pinInput').focus();
+            }
+        };
+
+        function handleQuickLogin() {
+            const pin = document.getElementById('pinInput').value.trim();
+            const errorMsg = document.getElementById('loginErrorMsg');
+            const loginBtn = document.getElementById('loginBtn');
+
+            if (!pin) { showError("กรุณากรอกรหัสประจำตัว"); return; }
+
+            const originalText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังตรวจสอบ...';
+            loginBtn.disabled = true;
+
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'login', pin: pin })
+            })
+            .then(r => r.json())
+            .then(data => {
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+
+                if (data.status === 'success') {
+                    sessionStorage.setItem('isLoggedIn', 'true');
+                    sessionStorage.setItem('username', data.username);
+                    sessionStorage.setItem('userRole', data.role);
+
+                    errorMsg.classList.replace('opacity-100', 'opacity-0');
+                    const overlay = document.getElementById('quickLoginOverlay');
+                    overlay.classList.add('opacity-0');
+                    setTimeout(() => {
+                        overlay.classList.add('hidden');
+                        initializeDashboard();
+                    }, 300);
+                } else {
+                    showError(data.message || "รหัสไม่ถูกต้อง กรุณาลองใหม่");
+                }
+            })
+            .catch(() => {
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+                showError("การเชื่อมต่อขัดข้อง กรุณาลองใหม่อีกครั้ง");
+            });
+
+            function showError(msg) {
+                errorMsg.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-1"></i> ${msg}`;
+                errorMsg.classList.replace('opacity-0', 'opacity-100');
+                document.getElementById('pinInput').value = '';
+                document.getElementById('pinInput').focus();
+                const modal = document.querySelector('#quickLoginOverlay > div');
+                modal.style.animation = 'none';
+                setTimeout(() => modal.style.animation = 'shake 0.4s ease-in-out', 10);
+            }
+        }
+
+        function initializeDashboard() {
+            username = sessionStorage.getItem('username') || 'Guest';
+            rawRole = sessionStorage.getItem('userRole') || 'User';
+            role = rawRole.toLowerCase() === 'admin' ? 'Admin' : 'User';
+            
+            document.getElementById('displayUser').textContent = username;
+            document.getElementById('displayRole').textContent = role;
+            document.getElementById('userInitial').textContent = username.charAt(0).toUpperCase();
+            document.body.setAttribute('data-role', role);
+
+            fetchInitialData();
+        }
+
         async function fetchInitialData() {
             showGlobalLoader('กำลังเตรียมข้อมูล', 'กำลังโหลดข้อมูลอัปเดต กรุณารอสักครู่...');
             try {
@@ -401,7 +517,7 @@
                 if(result.status === 'success') { 
                     db = result.data; 
                     renderUserDropdowns(); 
-                    document.getElementById('tab-data').classList.remove('hidden'); // โชว์หน้าแรก
+                    document.getElementById('tab-data').classList.remove('hidden'); 
                     renderTable(); 
                     renderUsers(); 
                 } else {
@@ -413,9 +529,22 @@
                 hideGlobalLoader();
             }
         }
-        
-        // เริ่มโหลดข้อมูลเมื่อเปิดหน้า
-        fetchInitialData();
+
+        // ==========================================
+        // กลับสู่เมนูหลัก (พร้อม Auto Logout)
+        // ==========================================
+        function goToMainMenu() {
+            showGlobalLoader('กำลังกลับสู่เมนูหลัก', 'กรุณารอสักครู่ ระบบกำลังออกจากระบบ...');
+            sessionStorage.clear();
+            localStorage.clear();
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 800);
+        }
+
+        function logout() {
+            goToMainMenu(); // ใช้ระบบเดียวกันกับกลับสู่หน้าหลัก
+        }
 
         function renderUserDropdowns() {
             const options = db.users.map(u => `<option value="${u.username}">${u.username} (${u.role})</option>`).join('');
@@ -429,8 +558,6 @@
 
         function handleTabSwitch(tab) {
             showGlobalLoader('กำลังจัดเตรียมหน้าต่าง', 'ระบบกำลังโหลดการอัปเดต กรุณารอสักครู่...');
-            
-            // หน่วงเวลาเล็กน้อยให้สมูท
             setTimeout(() => {
                 switchTab(tab);
                 hideGlobalLoader();
@@ -528,7 +655,7 @@
 
             const isRecv = name !== ''; 
             const newRecord = {
-                id: Date.now(), docNum: docNum, name: name, date: isRecv ? (document.getElementById('bdDate').value || "-") : "-", creator: assignTo, isReceived: isRecv
+                id: Date.now(), docNum: docNum, name: name, date: isRecv ? "-" : "-", creator: assignTo, isReceived: isRecv
             };
 
             try {
@@ -643,6 +770,11 @@
                 } else if (!isReceived) {
                     updateDate = "-"; 
                 }
+            } else {
+                // สำหรับ User ทั่วไป บันทึกชื่อโครงการได้อย่างเดียว
+                const today = new Date(); 
+                updateDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear() + 543}`;
+                isReceived = true;
             }
 
             try {
@@ -736,6 +868,7 @@
             const confP = document.getElementById('confirmNewPwd').value;
 
             if(!oldP || !newP || !confP) return alert('กรุณากรอกข้อมูลให้ครบทุกช่อง');
+            if(newP.length < 4 || newP.length > 6) return alert('กรุณาตั้งรหัสผ่าน 4-6 ตัว');
             if(newP !== confP) return alert('รหัสผ่านใหม่ไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง!');
 
             const originalHtml = btn.innerHTML;
@@ -759,8 +892,6 @@
             }
             btn.disabled = false; btn.innerHTML = originalHtml;
         }
-
-        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
     </script>
 </body>
 </html>
